@@ -30,65 +30,43 @@ class Teacher extends User {
     // Course Management
     public function createCourse($data) {
         try {
-            $db = new Database();
-            $conn = $db->getConnection();
+            $course = new TeacherCourse($this->db);
+            $course->setTitle($data['title']);
+            $course->setDescription($data['description']);
+            $course->setContent($data['content']);
+            $course->setTeacherId($this->id);
+            $course->setStatus('draft');
             
-            $sql = "INSERT INTO courses (teacher_id, title, description, content, status) 
-                    VALUES (:teacher_id, :title, :description, :content, :status)";
-            
-            $stmt = $conn->prepare($sql);
-            $stmt->execute([
-                'teacher_id' => $this->id,
-                'title' => $data['title'],
-                'description' => $data['description'],
-                'content' => $data['content'],
-                'status' => 'draft'
-            ]);
-            
-            return $conn->lastInsertId();
-        } catch(PDOException $e) {
+            return $course->save();
+        } catch(Exception $e) {
             return false;
         }
     }
 
     public function updateCourse($courseId, $data) {
         try {
-            $db = new Database();
-            $conn = $db->getConnection();
+            $course = new TeacherCourse($this->db);
+            $course->setId($courseId);
+            $course->setTitle($data['title']);
+            $course->setDescription($data['description']);
+            $course->setContent($data['content']);
+            $course->setTeacherId($this->id);
+            $course->setStatus($data['status']);
             
-            $sql = "UPDATE courses 
-                    SET title = :title, description = :description, 
-                        content = :content, status = :status 
-                    WHERE id = :id AND teacher_id = :teacher_id";
-            
-            $stmt = $conn->prepare($sql);
-            return $stmt->execute([
-                'id' => $courseId,
-                'teacher_id' => $this->id,
-                'title' => $data['title'],
-                'description' => $data['description'],
-                'content' => $data['content'],
-                'status' => $data['status']
-            ]);
-        } catch(PDOException $e) {
+            return $course->update();
+        } catch(Exception $e) {
             return false;
         }
     }
 
     public function deleteCourse($courseId) {
         try {
-            $db = new Database();
-            $conn = $db->getConnection();
+            $course = new TeacherCourse($this->db);
+            $course->setId($courseId);
+            $course->setTeacherId($this->id);
             
-            $sql = "DELETE FROM courses 
-                    WHERE id = :id AND teacher_id = :teacher_id";
-            
-            $stmt = $conn->prepare($sql);
-            return $stmt->execute([
-                'id' => $courseId,
-                'teacher_id' => $this->id
-            ]);
-        } catch(PDOException $e) {
+            return $course->delete();
+        } catch(Exception $e) {
             return false;
         }
     }

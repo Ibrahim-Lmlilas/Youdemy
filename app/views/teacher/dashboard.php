@@ -128,6 +128,7 @@ $userName = $_SESSION['user_name'];
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(255, 75, 75, 0.4);
         }
+        /* Table */
         table {
             background: rgba(255, 255, 255, 0.8);
             backdrop-filter: blur(10px);
@@ -278,5 +279,93 @@ $userName = $_SESSION['user_name'];
             </div>
         </main>
     </div>
+
+    <!-- Add Course Modal -->
+    <div id="courseModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full">
+        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div class="mt-3">
+                <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4">Add New Course</h3>
+                <form id="addCourseForm" method="POST" action="add_course.php" enctype="multipart/form-data">
+                    <div class="mb-4">
+                        <label class="block text-gray-700 text-sm font-bold mb-2" for="title">
+                            Course Title
+                        </label>
+                        <input type="text" id="title" name="title" required
+                            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="block text-gray-700 text-sm font-bold mb-2" for="description">
+                            Description
+                        </label>
+                        <textarea id="description" name="description" required
+                            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                            rows="3"></textarea>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="block text-gray-700 text-sm font-bold mb-2" for="category">
+                            Category
+                        </label>
+                        <select id="category" name="category_id" required
+                            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                            <option value="">Select Category</option>
+                            <?php
+                            // Fetch categories from database
+                            $stmt = $db->query("SELECT id, name FROM categories");
+                            while($category = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                                echo "<option value='" . $category['id'] . "'>" . htmlspecialchars($category['name']) . "</option>";
+                            }
+                            ?>
+                        </select>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="block text-gray-700 text-sm font-bold mb-2" for="tags">
+                            Tags (comma separated)
+                        </label>
+                        <input type="text" id="tags" name="tags"
+                            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="block text-gray-700 text-sm font-bold mb-2" for="thumbnail">
+                            Thumbnail Image
+                        </label>
+                        <input type="file" id="thumbnail" name="thumbnail" accept="image/*" required
+                            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                    </div>
+
+                    <div class="flex items-center justify-between mt-6">
+                        <button type="button" onclick="closeModal()"
+                            class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                            Cancel
+                        </button>
+                        <button type="submit"
+                            class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                            Create Course
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function openModal() {
+            document.getElementById('courseModal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('courseModal').classList.add('hidden');
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('courseModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeModal();
+            }
+        });
+    </script>
 </body>
 </html>

@@ -54,6 +54,16 @@ CREATE TABLE course_tags (
     FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE
 );
 
+-- Course Content
+CREATE TABLE course_content (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    course_id INT NOT NULL,
+    type ENUM('video', 'document') NOT NULL,
+    content_url TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE
+);
+
 -- Enrollments table
 CREATE TABLE enrollments (
     id INT PRIMARY KEY AUTO_INCREMENT,
