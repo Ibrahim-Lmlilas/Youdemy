@@ -1,7 +1,7 @@
 <?php
 session_start();
 
-require_once __DIR__ . '/../../models/Stats.php';
+require_once __DIR__ . '/../../models/TeacherApprovals.php';
 
 // Check if user is logged in and is an admin
 if(!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'admin') {
@@ -9,12 +9,23 @@ if(!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'admin') {
     exit();
 }
 
-$stats = new Stats();
-$totalUsers = $stats->getTotalUsers();
-$activeCourses = $stats->getActiveCourses();
-$pendingTeachers = $stats->getPendingTeachers();
-$recentActivities = $stats->getRecentActivities();
+// Handle approve/reject actions
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $teacherApprovals = new TeacherApprovals();
+    
+    if (isset($_POST['approve'])) {
+        $teacherApprovals->approveTeacher($_POST['teacher_id']);
+    } elseif (isset($_POST['reject'])) {
+        $teacherApprovals->rejectTeacher($_POST['teacher_id']);
+    }
+    
+    // Redirect to avoid form resubmission
+    header('Location: ' . $_SERVER['PHP_SELF']);
+    exit();
+}
 
+$teacherApprovals = new TeacherApprovals();
+$pendingTeachers = $teacherApprovals->getPendingTeachers();
 $userName = $_SESSION['user_name'] ?? 'Admin';
 ?>
 <!DOCTYPE html>
@@ -22,7 +33,7 @@ $userName = $_SESSION['user_name'] ?? 'Admin';
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard - Youdemy</title>
+    <title>Teacher Approvals - Youdemy</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -63,7 +74,6 @@ $userName = $_SESSION['user_name'] ?? 'Admin';
             animation: float 7s ease-in-out infinite reverse;
             z-index: 2;
             opacity: 0.5;
-            
         }
         @keyframes float {
             0% {
@@ -112,21 +122,6 @@ $userName = $_SESSION['user_name'] ?? 'Admin';
             position: relative;
             z-index: 1;
         }
-        .stat-card {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 1rem;
-            padding: 1.5rem;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-            transition: all 0.3s ease;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            position: relative;
-            z-index: 1;
-        }
-        .stat-card:hover {
-            transform: translateY(-5px) scale(1.02);
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-        }
         nav.bg-white {
             background: rgba(255, 255, 255, 0.95) !important;
             backdrop-filter: blur(10px);
@@ -141,6 +136,22 @@ $userName = $_SESSION['user_name'] ?? 'Admin';
         .logout-btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(255, 75, 75, 0.4);
+        }
+        .approve-btn {
+            background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+            transition: all 0.3s ease;
+        }
+        .approve-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(52, 211, 153, 0.4);
+        }
+        .reject-btn {
+            background: linear-gradient(135deg, #f87171 0%, #ef4444 100%);
+            transition: all 0.3s ease;
+        }
+        .reject-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(248, 113, 113, 0.4);
         }
     </style>
 </head>
@@ -166,7 +177,7 @@ $userName = $_SESSION['user_name'] ?? 'Admin';
         <!-- Sidebar -->
         <aside class="sidebar w-64 flex-shrink-0">
             <nav class="mt-5 px-2">
-                <a href="dashboard.php" class="sidebar-link active">
+                <a href="dashboard.php" class="sidebar-link">
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
                     </svg>
@@ -178,7 +189,7 @@ $userName = $_SESSION['user_name'] ?? 'Admin';
                     </svg>
                     Users
                 </a>
-                <a href="teacher_approvals.php" class="sidebar-link">
+                <a href="teacher_approvals.php" class="sidebar-link active">
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                     </svg>
@@ -202,83 +213,61 @@ $userName = $_SESSION['user_name'] ?? 'Admin';
 
         <!-- Main Content -->
         <main class="flex-1 p-8">
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-                <!-- Total Users Card -->
-                <div class="stat-card">
-                    <div class="flex items-center">
-                        <div class="p-3 rounded-full bg-blue-500 bg-opacity-10">
-                            <svg class="h-8 w-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                            </svg>
-                        </div>
-                        <div class="ml-4">
-                            <h3 class="text-lg font-semibold text-gray-900">Total Users</h3>
-                            <p class="text-3xl font-bold text-blue-500"><?php echo number_format($totalUsers); ?></p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Active Courses Card -->
-                <div class="stat-card">
-                    <div class="flex items-center">
-                        <div class="p-3 rounded-full bg-green-500 bg-opacity-10">
-                            <svg class="h-8 w-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
-                            </svg>
-                        </div>
-                        <div class="ml-4">
-                            <h3 class="text-lg font-semibold text-gray-900">Active Courses</h3>
-                            <p class="text-3xl font-bold text-green-500"><?php echo number_format($activeCourses); ?></p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Pending Teachers Card -->
-                <div class="stat-card">
-                    <div class="flex items-center">
-                        <div class="p-3 rounded-full bg-yellow-500 bg-opacity-10">
-                            <svg class="h-8 w-8 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                        </div>
-                        <div class="ml-4">
-                            <h3 class="text-lg font-semibold text-gray-900">Pending Teachers</h3>
-                            <p class="text-3xl font-bold text-yellow-500"><?php echo number_format($pendingTeachers); ?></p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Recent Activity Section -->
             <div class="content-area p-6">
-                <h2 class="text-2xl font-semibold text-gray-900 mb-4">Recent Activity</h2>
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-semibold text-gray-900">Teacher Approval Requests</h2>
+                </div>
+
+                <!-- Teachers List -->
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                             <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Teacher</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
-                            <?php foreach($recentActivities as $activity): ?>
+                            <?php foreach($pendingTeachers as $teacher): ?>
                             <tr>
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm text-gray-900"><?php echo htmlspecialchars($activity['user_name']); ?></div>
+                                    <div class="flex items-center">
+                                        <div class="h-10 w-10 rounded-full bg-gray-200"></div>
+                                        <div class="ml-4">
+                                            <div class="text-sm font-medium text-gray-900"><?php echo htmlspecialchars($teacher['name']); ?></div>
+                                        </div>
+                                    </div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm text-gray-900"><?php echo htmlspecialchars($activity['activity_type']); ?></div>
+                                    <div class="text-sm text-gray-900"><?php echo htmlspecialchars($teacher['email']); ?></div>
                                 </td>
-                                <td class="px-6 py-4">
-                                    <div class="text-sm text-gray-900"><?php echo htmlspecialchars($activity['description']); ?></div>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                                        <?php echo htmlspecialchars($teacher['status']); ?>
+                                    </span>
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                    <?php echo date('M j, Y H:i', strtotime($activity['created_at'])); ?>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                                    <form method="POST" class="inline">
+                                        <input type="hidden" name="teacher_id" value="<?php echo $teacher['id']; ?>">
+                                        <button type="submit" name="approve" class="approve-btn text-white px-3 py-1 rounded-md">
+                                            Approve
+                                        </button>
+                                        <button type="submit" name="reject" class="reject-btn text-white px-3 py-1 rounded-md">
+                                            Reject
+                                        </button>
+                                    </form>
                                 </td>
                             </tr>
                             <?php endforeach; ?>
+                            <?php if (empty($pendingTeachers)): ?>
+                            <tr>
+                                <td colspan="4" class="px-6 py-4 text-center text-gray-500">
+                                    No pending teacher approvals
+                                </td>
+                            </tr>
+                            <?php endif; ?>
                         </tbody>
                     </table>
                 </div>

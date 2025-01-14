@@ -20,56 +20,11 @@ $userName = $_SESSION['user_name'];
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #ffffff;
-            min-height: 100vh;
-            position: relative;
-            overflow-x: hidden;
-        }
-        /* Decorative Circles */
-        body::before,
-        body::after {
-            content: '';
-            position: fixed;
-            border-radius: 50%;
-            z-index: -1;
-        }
-        body::before {
-            width: 400px;
-            height: 400px;
-            background: linear-gradient(135deg, rgba(37, 99, 235, 0.1), rgba(59, 130, 246, 0.05));
-            top: -100px;
-            right: -100px;
-            backdrop-filter: blur(10px);
-            animation: float 8s ease-in-out infinite;
-        }
-        body::after {
-            width: 300px;
-            height: 300px;
-            background: rgb(33, 50, 135);
-            bottom: -50px;
-            left: -50px;
-            backdrop-filter: blur(10px);
-            animation: float 6s ease-in-out infinite reverse;
-            opacity: 0.1;
-        }
-        @keyframes float {
-            0% {
-                transform: translate(0, 0) rotate(0deg);
-            }
-            50% {
-                transform: translate(30px, 30px) rotate(5deg);
-            }
-            100% {
-                transform: translate(0, 0) rotate(0deg);
-            }
+            background-color: #f3f4f6;
         }
         .sidebar {
-            background: rgba(31, 41, 55, 0.95);
-            backdrop-filter: blur(10px);
+            background: rgb(31, 41, 55);
             min-height: calc(100vh - 4rem);
-            border-right: 1px solid rgba(255, 255, 255, 0.1);
-            position: relative;
-            z-index: 1;
         }
         .sidebar-link {
             color: #9ca3af;
@@ -81,9 +36,8 @@ $userName = $_SESSION['user_name'];
             margin: 0.25rem 0.5rem;
         }
         .sidebar-link:hover, .sidebar-link.active {
-            background: rgba(255, 255, 255, 0.1);
+            background: rgb(55, 65, 81);
             color: white;
-            transform: translateX(5px);
         }
         .sidebar-link svg {
             width: 1.25rem;
@@ -91,42 +45,20 @@ $userName = $_SESSION['user_name'];
             margin-right: 0.75rem;
         }
         .content-area {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
+            background: white;
             border-radius: 1rem;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-            position: relative;
-            z-index: 1;
         }
         .stat-card {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
+            background: white;
             border-radius: 1rem;
             padding: 1.5rem;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
             transition: all 0.3s ease;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            position: relative;
-            z-index: 1;
         }
         .stat-card:hover {
-            transform: translateY(-5px) scale(1.02);
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-        }
-        nav.bg-white {
-            background: rgba(255, 255, 255, 0.95) !important;
-            backdrop-filter: blur(10px);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-            position: relative;
-            z-index: 1;
-        }
-        .logout-btn {
-            background: linear-gradient(135deg, #ff4b4b 0%, #ff9797 100%);
-            transition: all 0.3s ease;
-        }
-        .logout-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(255, 75, 75, 0.4);
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
         }
     </style>
 </head>
@@ -142,7 +74,7 @@ $userName = $_SESSION['user_name'];
                 </div>
                 <div class="flex items-center space-x-4">
                     <span class="text-gray-700">Welcome, <?php echo htmlspecialchars($userName); ?></span>
-                    <a href="../auth/logout.php" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 logout-btn">Logout</a>
+                    <a href="../auth/logout.php" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md text-sm font-medium transition-all duration-200">Logout</a>
                 </div>
             </div>
         </div>

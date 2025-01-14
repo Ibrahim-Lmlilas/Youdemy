@@ -16,6 +16,16 @@ class Database {
         }
     }
 
+    public function query($sql, $params = []) {
+        try {
+            $stmt = $this->conn->prepare($sql);
+            $stmt->execute($params);
+            return $stmt;
+        } catch(PDOException $e) {
+            die("Query Error: " . $e->getMessage());
+        }
+    }
+
     public function getConnection() {
         return $this->conn;
     }
