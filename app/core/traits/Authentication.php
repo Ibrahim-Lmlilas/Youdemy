@@ -1,26 +1,78 @@
 <?php
 
-trait Authentication {
-    public function login($email, $password) {
-        // Verify 
-        if($this->verifyCredentials($email, $password)) {
+require_once __DIR__ . '/../../config/Database.php';
 
-            session_start();
+trait Authentication {
+    protected $db;
+    protected $id;
+    protected $name;
+    protected $email;
+    protected $role;
+    protected $status;
+
+    public function __construct() {
+        $db = new Database();
+        $this->db = $db->getConnection();
+    }
+
+    public function register($name, $email, $password, $role) {
+        // Check if email already exists
+        $stmt = $this->db->prepare("SELECT id FROM users WHERE email = ?");
+        $stmt->execute([$email]);
+        if($stmt->fetch()) {
+            return false; // Email already exists
+        }
+
+        // Hash password
+        $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
+
+        // Set status based on role
+        $status = ($role === 'teacher') ? 'pending' : 'active';
+
+        // Insert new user
+        $stmt = $this->db->prepare("
+            INSERT INTO users (name, email, password, role, status) 
+            VALUES (?, ?, ?, ?, ?)
+        ");
+
+        return $stmt->execute([$name, $email, $hashedPassword, $role, $status]);
+    }
+
+    public function login($email, $password) {
+        // Get user by email
+        $stmt = $this->db->prepare("SELECT * FROM users WHERE email = ?");
+        $stmt->execute([$email]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        // Check if user exists and password is correct
+        if($user && password_verify($password, $user['password'])) {
+            // Store user data in properties
+            $this->id = $user['id'];
+            $this->name = $user['name'];
+            $this->email = $user['email'];
+            $this->role = $user['role'];
+            $this->status = $user['status'];
+
+            // Start session and store user data
+            if (session_status() === PHP_SESSION_NONE) {
+                session_start();
+            }
             $_SESSION['user_id'] = $this->id;
-            $_SESSION['role'] = $this->getRole();
+            $_SESSION['user_name'] = $this->name;
+            $_SESSION['user_role'] = $this->role;
+            $_SESSION['user_status'] = $this->status;
+
             return true;
         }
+
         return false;
     }
 
-
-    public function logout() {
-        session_start();
-        session_destroy();
-        return true;
+    public function getStatus() {
+        return $this->status;
     }
 
-    private function verifyCredentials($email, $password) {
-        return false;
+    public function getRole() {
+        return $this->role;
     }
 }

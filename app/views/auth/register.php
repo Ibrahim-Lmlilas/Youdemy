@@ -1,3 +1,12 @@
+<?php
+// Start session for errors
+session_start();
+
+// Get errors if they exist
+$errors = $_SESSION['errors'] ?? [];
+// Clear errors
+unset($_SESSION['errors']);
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -148,38 +157,50 @@
         <div class="card-content">
             <div class="text-center mb-6">
                 <div class="avatar w-24 h-24 mx-auto mb-4">
-                    <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZD0iTTIwIDRINEMyLjkgNCAyIDQuOSAyIDZWMThDMiAxOS4xIDIuOSAyMCA0IDIwSDIwQzIxLjEgMjAgMjIgMTkuMSAyMiAxOFY2QzIyIDQuOSAyMS4xIDQgMjAgNFpNMjAgMThINFY2SDIwVjE4Wk0xOCA4SDZWMTBIMThWOFpNMTUgMTJINlYxNEgxNVYxMloiIGZpbGw9IiMwMDM1NzIiLz48L3N2Zz4=" alt="Certificate" class="w-full h-full">
+                <img src="../../../assets/img/C.jpg" class="w-full h-full object-cover rounded-full shadow-lg transform hover:scale-105 transition-transform duration-300">
                 </div>
                 <h2 class="text-2xl font-bold text-gray-900">Create Account</h2>
                 <p class="text-gray-600 mt-1 text-sm">Join our learning community</p>
             </div>
 
-            <form class="space-y-4" action="/register" method="POST">
+            <form class="space-y-4" action="register_process.php" method="POST">
                 <div>
                     <input type="text" id="name" name="name" required
-                        class="w-full form-input"
-                        placeholder="Full Name">
+                           class="w-full form-input <?php echo isset($errors['name']) ? 'border-red-500' : ''; ?>"
+                           placeholder="Full Name">
+                    <?php if(isset($errors['name'])): ?>
+                        <p class="text-red-500 text-sm mt-1"><?php echo $errors['name']; ?></p>
+                    <?php endif; ?>
                 </div>
 
                 <div>
                     <input type="email" id="email" name="email" required
-                        class="w-full form-input"
-                        placeholder="Email">
+                           class="w-full form-input <?php echo isset($errors['email']) ? 'border-red-500' : ''; ?>"
+                           placeholder="Email">
+                    <?php if(isset($errors['email'])): ?>
+                        <p class="text-red-500 text-sm mt-1"><?php echo $errors['email']; ?></p>
+                    <?php endif; ?>
                 </div>
 
                 <div>
                     <input type="password" id="password" name="password" required
-                        class="w-full form-input"
-                        placeholder="Password">
+                           class="w-full form-input <?php echo isset($errors['password']) ? 'border-red-500' : ''; ?>"
+                           placeholder="Password">
+                    <?php if(isset($errors['password'])): ?>
+                        <p class="text-red-500 text-sm mt-1"><?php echo $errors['password']; ?></p>
+                    <?php endif; ?>
                 </div>
 
                 <div>
                     <select id="role" name="role" required
-                        class="w-full form-input">
+                            class="w-full form-input <?php echo isset($errors['role']) ? 'border-red-500' : ''; ?>">
                         <option value="" disabled selected>Choose your role</option>
                         <option value="student">Learn on Youdemy</option>
                         <option value="teacher">Teach on Youdemy</option>
                     </select>
+                    <?php if(isset($errors['role'])): ?>
+                        <p class="text-red-500 text-sm mt-1"><?php echo $errors['role']; ?></p>
+                    <?php endif; ?>
                 </div>
 
                 <button type="submit" class="w-full btn-primary">

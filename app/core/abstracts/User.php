@@ -1,41 +1,33 @@
 <?php
 
+require_once __DIR__ . '/../traits/Authentication.php';
+
 abstract class User {
+    use Authentication;
+
     protected $id;
     protected $name;
     protected $email;
-    protected $password;
-    protected $status = 'active';
+    protected $role;
+    protected $status;
+    protected $created_at;
+    protected $updated_at;
 
-    abstract public function getRole();
-    abstract public function getDashboard();
-    abstract public function getPermissions();
+    // Getters
+    public function getId() { return $this->id; }
+    public function getName() { return $this->name; }
+    public function getEmail() { return $this->email; }
+    public function getRole() { return $this->role; }
+    public function getStatus() { return $this->status; }
+    public function getCreatedAt() { return $this->created_at; }
+    public function getUpdatedAt() { return $this->updated_at; }
 
-    public function getId() {
-        return $this->id;
-    }
+    // Setters
+    public function setName($name) { $this->name = $name; }
+    public function setEmail($email) { $this->email = $email; }
+    public function setStatus($status) { $this->status = $status; }
 
-    public function getName() {
-        return $this->name;
-    }
-
-    public function getEmail() {
-        return $this->email;
-    }
-
-    public function setName($name) {
-        $this->name = $name;
-    }
-
-    public function setEmail($email) {
-        $this->email = $email;
-    }
-
-    public function setPassword($password) {
-        $this->password = password_hash($password, PASSWORD_DEFAULT);
-    }
-
-    public function getStatus() {
-        return $this->status;
-    }
+    // Abstract methods
+    abstract public function update();
+    abstract public function delete();
 }

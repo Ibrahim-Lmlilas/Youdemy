@@ -1,7 +1,7 @@
 <?php
 
-require_once '../core/abstracts/User.php';
-require_once '../config/Database.php';
+require_once __DIR__ . '/../core/abstracts/User.php';
+require_once __DIR__ . '/../config/Database.php';
 
 class Teacher extends User {
     private $courses = [];
@@ -193,5 +193,139 @@ class Teacher extends User {
         } catch(PDOException $e) {
             return [];
         }
+    }
+
+    public function update() {
+        $db = new Database();
+        $conn = $db->getConnection();
+        $stmt = $conn->prepare("
+            UPDATE users 
+            SET name = ?, email = ?, status = ?, updated_at = CURRENT_TIMESTAMP
+            WHERE id = ? AND role = 'teacher'
+        ");
+        return $stmt->execute([$this->name, $this->email, $this->status, $this->id]);
+    }
+
+    public function delete() {
+        $db = new Database();
+        $conn = $db->getConnection();
+        $stmt = $conn->prepare("DELETE FROM users WHERE id = ? AND role = 'teacher'");
+        return $stmt->execute([$this->id]);
+    }
+
+    public function createCourseNew($data) {
+        $db = new Database();
+        $conn = $db->getConnection();
+        $stmt = $conn->prepare("
+            INSERT INTO courses (teacher_id, category_id, title, description, content, image, price, status)
+            VALUES (?, ?, ?, ?, ?, ?, ?, 'draft')
+        ");
+        
+        return $stmt->execute([
+            $this->id,
+            $data['category_id'],
+            $data['title'],
+            $data['description'],
+            $data['content'],
+            $data['image'] ?? null,
+            $data['price'] ?? 0
+        ]);
+    }
+
+    public function getMyCoursesNew() {
+        $db = new Database();
+        $conn = $db->getConnection();
+        $stmt = $conn->prepare("
+            SELECT c.*, cat.name as category_name,
+                   COUNT(DISTINCT e.id) as total_students,
+                   COUNT(DISTINCT com.id) as total_comments
+            FROM courses c
+            LEFT JOIN categories cat ON c.category_id = cat.id
+            LEFT JOIN enrollments e ON c.id = e.course_id
+            LEFT JOIN comments com ON c.id = com.course_id
+            WHERE c.teacher_id = ?
+            GROUP BY c.id
+            ORDER BY c.created_at DESC
+        ");
+        
+        $stmt->execute([$this->id]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function getCourseStudentsNew($courseId) {
+        $db = new Database();
+        $conn = $db->getConnection();
+        $stmt = $conn->prepare("
+            SELECT u.id, u.name, u.email,
+                   e.status, e.progress, e.enrolled_at, e.completed_at
+            FROM enrollments e
+            JOIN users u ON e.student_id = u.id
+            WHERE e.course_id = ? AND u.role = 'student'
+            ORDER BY e.enrolled_at DESC
+        ");
+        
+        $stmt->execute([$courseId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function getCourseStatisticsNew($courseId = null) {
+        $db = new Database();
+        $conn = $db->getConnection();
+        $query = "
+            SELECT 
+                COUNT(DISTINCT e.id) as total_enrollments,
+                COUNT(DISTINCT CASE WHEN e.status = 'completed' THEN e.id END) as completed_count,
+                COUNT(DISTINCT CASE WHEN e.status = 'active' THEN e.id END) as active_count,
+                COUNT(DISTINCT CASE WHEN e.status = 'dropped' THEN e.id END) as dropped_count,
+                AVG(e.progress) as average_progress,
+                COUNT(DISTINCT com.id) as total_comments
+            FROM courses c
+            LEFT JOIN enrollments e ON c.id = e.course_id
+            LEFT JOIN comments com ON c.id = com.course_id
+            WHERE c.teacher_id = ?
+        ";
+        
+        if($courseId) {
+            $query .= " AND c.id = ?";
+            $stmt = $conn->prepare($query);
+            $stmt->execute([$this->id, $courseId]);
+        } else {
+            $stmt = $conn->prepare($query);
+            $stmt->execute([$this->id]);
+        }
+        
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    public function addCourseContent($courseId, $data) {
+        $db = new Database();
+        $conn = $db->getConnection();
+        $stmt = $conn->prepare("
+            INSERT INTO course_content (course_id, title, type, content_url, duration, order_number)
+            VALUES (?, ?, ?, ?, ?, ?)
+        ");
+        
+        return $stmt->execute([
+            $courseId,
+            $data['title'],
+            $data['type'],
+            $data['content_url'],
+            $data['duration'] ?? 0,
+            $data['order_number'] ?? 0
+        ]);
+    }
+
+    public function getCourseContent($courseId) {
+        $db = new Database();
+        $conn = $db->getConnection();
+        $stmt = $conn->prepare("
+            SELECT *
+            FROM course_content
+            WHERE course_id = ?
+            ORDER BY order_number ASC
+        ");
+        
+        $stmt->execute([$courseId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 }
