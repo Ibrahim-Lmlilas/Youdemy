@@ -1,7 +1,7 @@
 <?php
 session_start();
 
-require_once __DIR__ . '/../../models/Stats.php';
+require_once __DIR__ . '/../../models/Admin.php';
 
 // Check if user is logged in and is an admin
 if(!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'admin') {
@@ -9,14 +9,13 @@ if(!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'admin') {
     exit();
 }
 
-$stats = new Stats();
-$totalUsers = $stats->getTotalUsers();
-$activeCourses = $stats->getActiveCourses();
-$pendingTeachers = $stats->getPendingTeachers();
-$recentActivities = $stats->getRecentActivities();
-
+$admin = new Admin();
+$totalUsers = $admin->getTotalUsers();
+$activeCourses = $admin->getActiveCourseCount();
+$totalEnrollments = $admin->getTotalEnrollments();
 $userName = $_SESSION['user_name'] ?? 'Admin';
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -63,7 +62,6 @@ $userName = $_SESSION['user_name'] ?? 'Admin';
             animation: float 7s ease-in-out infinite reverse;
             z-index: 2;
             opacity: 0.5;
-            
         }
         @keyframes float {
             0% {
@@ -149,14 +147,14 @@ $userName = $_SESSION['user_name'] ?? 'Admin';
     <nav class="bg-white shadow-lg">
         <div class="max-w-full mx-auto px-4">
             <div class="flex justify-between h-16">
-                <div class="flex">
-                    <div class="flex-shrink-0 flex items-center">
-                        <img class="h-8 w-auto" src="../../../assets/img/C.jpg" alt="Logo">
-                    </div>
+                <div class="flex items-center">
+                    <span class="text-2xl font-semibold text-gray-800">Admin Dashboard</span>
                 </div>
                 <div class="flex items-center space-x-4">
-                    <span class="text-gray-700">Welcome, <?php echo htmlspecialchars($userName); ?></span>
-                    <a href="../auth/logout.php" class="logout-btn bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md text-sm font-medium transition-all duration-200">Logout</a>
+                    <span class="text-gray-700">Welcome, <?= htmlspecialchars($userName) ?></span>
+                    <a href="../auth/logout.php" class="logout-btn text-white px-4 py-2 rounded-lg font-medium hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2">
+                        Logout
+                    </a>
                 </div>
             </div>
         </div>
@@ -178,17 +176,17 @@ $userName = $_SESSION['user_name'] ?? 'Admin';
                     </svg>
                     Users
                 </a>
-                <a href="teacher_approvals.php" class="sidebar-link">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
-                    Teacher Approvals
-                </a>
                 <a href="courses.php" class="sidebar-link">
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
                     </svg>
                     Courses
+                </a>
+                <a href="teacher_approvals.php" class="sidebar-link">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
+                    </svg>
+                    Teacher Approvals
                 </a>
                 <a href="settings.php" class="sidebar-link">
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -202,18 +200,21 @@ $userName = $_SESSION['user_name'] ?? 'Admin';
 
         <!-- Main Content -->
         <main class="flex-1 p-8">
+            <div class="flex justify-between items-center mb-6">
+                <h1 class="text-3xl font-bold text-gray-900">Dashboard</h1>
+            </div>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-                <!-- Total Users Card -->
+                <!-- Active Users Card -->
                 <div class="stat-card">
                     <div class="flex items-center">
                         <div class="p-3 rounded-full bg-blue-500 bg-opacity-10">
                             <svg class="h-8 w-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
                             </svg>
                         </div>
-                        <div class="ml-4">
-                            <h3 class="text-lg font-semibold text-gray-900">Total Users</h3>
-                            <p class="text-3xl font-bold text-blue-500"><?php echo number_format($totalUsers); ?></p>
+                        <div class="ml-5">
+                            <h4 class="text-2xl font-semibold text-gray-700"><?= number_format($totalUsers) ?></h4>
+                            <p class="text-gray-600">Total Users</p>
                         </div>
                     </div>
                 </div>
@@ -226,61 +227,34 @@ $userName = $_SESSION['user_name'] ?? 'Admin';
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
                             </svg>
                         </div>
-                        <div class="ml-4">
-                            <h3 class="text-lg font-semibold text-gray-900">Active Courses</h3>
-                            <p class="text-3xl font-bold text-green-500"><?php echo number_format($activeCourses); ?></p>
+                        <div class="ml-5">
+                            <h4 class="text-2xl font-semibold text-gray-700"><?= number_format($activeCourses) ?></h4>
+                            <p class="text-gray-600">Active Courses</p>
                         </div>
                     </div>
                 </div>
 
-                <!-- Pending Teachers Card -->
+                <!-- Total Enrollments Card -->
                 <div class="stat-card">
                     <div class="flex items-center">
-                        <div class="p-3 rounded-full bg-yellow-500 bg-opacity-10">
-                            <svg class="h-8 w-8 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        <div class="p-3 rounded-full bg-purple-500 bg-opacity-10">
+                            <svg class="h-8 w-8 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
                             </svg>
                         </div>
-                        <div class="ml-4">
-                            <h3 class="text-lg font-semibold text-gray-900">Pending Teachers</h3>
-                            <p class="text-3xl font-bold text-yellow-500"><?php echo number_format($pendingTeachers); ?></p>
+                        <div class="ml-5">
+                            <h4 class="text-2xl font-semibold text-gray-700"><?= number_format($totalEnrollments) ?></h4>
+                            <p class="text-gray-600">Total Enrollments</p>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Recent Activity Section -->
-            <div class="content-area p-6">
-                <h2 class="text-2xl font-semibold text-gray-900 mb-4">Recent Activity</h2>
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
-                            <?php foreach($recentActivities as $activity): ?>
-                            <tr>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm text-gray-900"><?php echo htmlspecialchars($activity['user_name']); ?></div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm text-gray-900"><?php echo htmlspecialchars($activity['activity_type']); ?></div>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <div class="text-sm text-gray-900"><?php echo htmlspecialchars($activity['description']); ?></div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                    <?php echo date('M j, Y H:i', strtotime($activity['created_at'])); ?>
-                                </td>
-                            </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
+            <!-- Recent Activity -->
+            <div class="content-area">
+                <div class="p-6">
+                    <h2 class="text-2xl font-semibold text-gray-900 mb-4">Recent Activity</h2>
+                    <p class="text-gray-600">Coming soon...</p>
                 </div>
             </div>
         </main>

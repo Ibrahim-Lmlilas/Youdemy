@@ -18,7 +18,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     try {
-        $db = Database::getInstance();
+        $db = new Database();
         $course = new TeacherCourse($db->getConnection());
         
         // Set course properties

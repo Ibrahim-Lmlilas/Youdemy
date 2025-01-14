@@ -24,11 +24,24 @@ CREATE TABLE categories (
 );
 
 -- Tags table
-CREATE TABLE tags (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    name VARCHAR(50) NOT NULL UNIQUE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+CREATE TABLE IF NOT EXISTS `tags` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(50) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `name` (`name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Course Tags (Many-to-Many)
+CREATE TABLE IF NOT EXISTS `course_tags` (
+  `course_id` int(11) NOT NULL,
+  `tag_id` int(11) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`course_id`,`tag_id`),
+  KEY `tag_id` (`tag_id`),
+  CONSTRAINT `course_tags_ibfk_1` FOREIGN KEY (`course_id`) REFERENCES `courses` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `course_tags_ibfk_2` FOREIGN KEY (`tag_id`) REFERENCES `tags` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Courses table
 CREATE TABLE courses (
@@ -43,25 +56,6 @@ CREATE TABLE courses (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (teacher_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE
-);
-
--- Course Tags (Many-to-Many)
-CREATE TABLE course_tags (
-    course_id INT,
-    tag_id INT,
-    PRIMARY KEY (course_id, tag_id),
-    FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE,
-    FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE
-);
-
--- Course Content
-CREATE TABLE course_content (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    course_id INT NOT NULL,
-    type ENUM('video', 'document') NOT NULL,
-    content_url TEXT NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE
 );
 
 -- Enrollments table

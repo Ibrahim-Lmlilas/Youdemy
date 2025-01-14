@@ -13,11 +13,134 @@ require_once __DIR__ . '/../../models/VideoCourse.php';
 require_once __DIR__ . '/../../models/DocumentCourse.php';
 
 $userName = $_SESSION['user_name'];
+$db = new Database();
+
+// Handle form submission
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $action = $_POST['action'] ?? '';
+    
+    try {
+        switch($action) {
+            case 'add':
+                // Get form data
+                $title = trim($_POST['title'] ?? '');
+                $description = trim($_POST['description'] ?? '');
+                $type = trim($_POST['type'] ?? '');
+                $category_id = (int)($_POST['category'] ?? 0);
+                $tags = $_POST['tags'] ?? [];
+
+                // Create course
+                $sql = "INSERT INTO courses (title, description, type, category_id, teacher_id) VALUES (?, ?, ?, ?, ?)";
+                $db->query($sql, [$title, $description, $type, $category_id, $_SESSION['user_id']]);
+                $course_id = $db->lastInsertId();
+
+                // Handle file upload
+                if (isset($_FILES['content']) && $_FILES['content']['error'] === UPLOAD_ERR_OK) {
+                    $file = $_FILES['content'];
+                    $uploadDir = __DIR__ . '/../../public/uploads/' . $type . 's/';
+                    if (!is_dir($uploadDir)) {
+                        mkdir($uploadDir, 0777, true);
+                    }
+                    
+                    $fileName = uniqid() . '_' . basename($file['name']);
+                    $targetPath = $uploadDir . $fileName;
+                    
+                    if (move_uploaded_file($file['tmp_name'], $targetPath)) {
+                        $sql = "UPDATE courses SET content_url = ? WHERE id = ?";
+                        $db->query($sql, ['/uploads/' . $type . 's/' . $fileName, $course_id]);
+                    }
+                }
+
+                // Add tags
+                if (!empty($tags)) {
+                    foreach ($tags as $tag_id) {
+                        $sql = "INSERT INTO course_tags (course_id, tag_id) VALUES (?, ?)";
+                        $db->query($sql, [$course_id, $tag_id]);
+                    }
+                }
+
+                $_SESSION['success_message'] = 'Course added successfully!';
+                break;
+
+            case 'update':
+                $course_id = (int)($_POST['course_id'] ?? 0);
+                $title = trim($_POST['title'] ?? '');
+                $description = trim($_POST['description'] ?? '');
+                $category_id = (int)($_POST['category'] ?? 0);
+                $tags = $_POST['tags'] ?? [];
+
+                // Update course
+                $sql = "UPDATE courses SET title = ?, description = ?, category_id = ? WHERE id = ? AND teacher_id = ?";
+                $db->query($sql, [$title, $description, $category_id, $course_id, $_SESSION['user_id']]);
+
+                // Handle file upload if new file
+                if (isset($_FILES['content']) && $_FILES['content']['error'] === UPLOAD_ERR_OK) {
+                    // Get course type
+                    $sql = "SELECT type FROM courses WHERE id = ?";
+                    $type = $db->query($sql, [$course_id])->fetch()['type'];
+
+                    $file = $_FILES['content'];
+                    $uploadDir = __DIR__ . '/../../public/uploads/' . $type . 's/';
+                    if (!is_dir($uploadDir)) {
+                        mkdir($uploadDir, 0777, true);
+                    }
+                    
+                    $fileName = uniqid() . '_' . basename($file['name']);
+                    $targetPath = $uploadDir . $fileName;
+                    
+                    if (move_uploaded_file($file['tmp_name'], $targetPath)) {
+                        $sql = "UPDATE courses SET content_url = ? WHERE id = ?";
+                        $db->query($sql, ['/uploads/' . $type . 's/' . $fileName, $course_id]);
+                    }
+                }
+
+                // Update tags
+                $sql = "DELETE FROM course_tags WHERE course_id = ?";
+                $db->query($sql, [$course_id]);
+                
+                if (!empty($tags)) {
+                    foreach ($tags as $tag_id) {
+                        $sql = "INSERT INTO course_tags (course_id, tag_id) VALUES (?, ?)";
+                        $db->query($sql, [$course_id, $tag_id]);
+                    }
+                }
+
+                $_SESSION['success_message'] = 'Course updated successfully!';
+                break;
+
+            case 'delete':
+                $course_id = (int)($_POST['course_id'] ?? 0);
+                
+                // Delete course tags
+                $sql = "DELETE FROM course_tags WHERE course_id = ?";
+                $db->query($sql, [$course_id]);
+                
+                // Delete course
+                $sql = "DELETE FROM courses WHERE id = ? AND teacher_id = ?";
+                $db->query($sql, [$course_id, $_SESSION['user_id']]);
+                
+                $_SESSION['success_message'] = 'Course deleted successfully!';
+                break;
+        }
+        
+        header('Location: courses.php');
+        exit;
+        
+    } catch (Exception $e) {
+        $_SESSION['error_message'] = $e->getMessage();
+    }
+}
 
 // Get teacher's courses
-$db = new Database();
 $sql = "SELECT * FROM courses WHERE teacher_id = ? ORDER BY created_at DESC";
 $courses = $db->query($sql, [$_SESSION['user_id']])->fetchAll();
+
+// Get categories and tags for form
+$sql = "SELECT * FROM categories ORDER BY name";
+$categories = $db->query($sql)->fetchAll();
+
+$sql = "SELECT * FROM tags ORDER BY name";
+$tags = $db->query($sql)->fetchAll();
 ?>
 
 <!DOCTYPE html>
@@ -358,7 +481,7 @@ $courses = $db->query($sql, [$_SESSION['user_id']])->fetchAll();
                 </a>
                 <a href="analytics.php" class="sidebar-link">
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 00-2-2h-2a2 2 0 00-2 2v14a2 2 0 01-2 2h-3a2 2 0 01-2-2z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h5m2 4h6a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2m-6 0h6"></path>
                     </svg>
                     Analytics
                 </a>
@@ -450,95 +573,77 @@ $courses = $db->query($sql, [$_SESSION['user_id']])->fetchAll();
             </div>
             
             <div class="modal-body p-4">
-                <form id="courseForm" method="POST" action="add_course.php" enctype="multipart/form-data">
+                <form id="courseForm" method="POST" enctype="multipart/form-data">
                     <input type="hidden" id="course_id" name="course_id">
+                    <input type="hidden" name="action" value="add">
                     
                     <div class="space-y-4">
                         <div class="form-group">
                             <label class="block text-sm font-medium text-gray-700" for="title">Course Title</label>
                             <input type="text" id="title" name="title" required 
-                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                placeholder="Enter course title">
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                         </div>
 
                         <div class="form-group">
                             <label class="block text-sm font-medium text-gray-700" for="description">Description</label>
-                            <textarea id="description" name="description" required 
-                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                rows="3" placeholder="Enter course description"></textarea>
+                            <textarea id="description" name="description" rows="4" required
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"></textarea>
                         </div>
 
                         <div class="form-group">
-                            <label class="block text-sm font-medium text-gray-700" for="category">Category</label>
-                            <select id="category" name="category_id" required 
+                            <label class="block text-sm font-medium text-gray-700" for="type">Course Type</label>
+                            <select id="type" name="type" required
                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                                <option value="">Select a category</option>
-                                <?php
-                                $stmt = $db->query("SELECT id, name FROM categories ORDER BY name");
-                                while($category = $stmt->fetch(PDO::FETCH_ASSOC)) {
-                                    echo "<option value='" . $category['id'] . "'>" . htmlspecialchars($category['name']) . "</option>";
-                                }
-                                ?>
+                                <option value="">Select type</option>
+                                <option value="video">Video Course</option>
+                                <option value="document">Document Course</option>
                             </select>
                         </div>
 
                         <div class="form-group">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Content Type</label>
-                            <div class="flex space-x-4">
-                                <label class="inline-flex items-center">
-                                    <input type="radio" name="content_type" value="video" class="form-radio text-blue-600" checked>
-                                    <span class="ml-2">Video</span>
-                                </label>
-                                <label class="inline-flex items-center">
-                                    <input type="radio" name="content_type" value="document" class="form-radio text-blue-600">
-                                    <span class="ml-2">Document</span>
-                                </label>
-                            </div>
-                        </div>
-
-                        <div id="video_content" class="form-group">
-                            <label class="block text-sm font-medium text-gray-700" for="video_url">Video URL</label>
-                            <input type="url" id="video_url" name="video_url" 
-                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                placeholder="Enter YouTube or Vimeo URL">
-                            <p class="mt-1 text-sm text-gray-500">Paste the URL of your video from YouTube or Vimeo</p>
-                        </div>
-
-                        <div id="document_content" class="form-group hidden">
-                            <label class="block text-sm font-medium text-gray-700" for="document">Document File</label>
-                            <input type="file" id="document" name="document" 
+                            <label class="block text-sm font-medium text-gray-700" for="content">Course Content</label>
+                            <input type="file" id="content" name="content" required
                                 class="mt-1 block w-full text-sm text-gray-500
                                     file:mr-4 file:py-2 file:px-4
                                     file:rounded-md file:border-0
                                     file:text-sm file:font-semibold
                                     file:bg-blue-50 file:text-blue-700
-                                    hover:file:bg-blue-100"
-                                accept=".pdf,.doc,.docx,.ppt,.pptx">
-                            <p class="mt-1 text-sm text-gray-500">Accepted formats: PDF, DOC, DOCX, PPT, PPTX</p>
+                                    hover:file:bg-blue-100">
+                            <p class="mt-1 text-sm text-gray-500">
+                                For video courses: Upload MP4, WebM, or OGG files
+                                For document courses: Upload PDF or Word documents
+                            </p>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="block text-sm font-medium text-gray-700" for="category">Category</label>
+                            <select id="category" name="category"
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                <option value="">Select a category</option>
+                                <?php foreach($categories as $category): ?>
+                                    <option value="<?= $category['id'] ?>"><?= htmlspecialchars($category['name']) ?></option>
+                                <?php endforeach; ?>
+                            </select>
                         </div>
 
                         <div class="form-group">
                             <label class="block text-sm font-medium text-gray-700" for="tags">Tags</label>
                             <select id="tags" name="tags[]" multiple 
                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                                <?php
-                                $stmt = $db->query("SELECT id, name FROM tags ORDER BY name");
-                                while($tag = $stmt->fetch(PDO::FETCH_ASSOC)) {
-                                    echo "<option value='" . $tag['id'] . "'>" . htmlspecialchars($tag['name']) . "</option>";
-                                }
-                                ?>
+                                <?php foreach($tags as $tag): ?>
+                                    <option value="<?= $tag['id'] ?>"><?= htmlspecialchars($tag['name']) ?></option>
+                                <?php endforeach; ?>
                             </select>
-                            <p class="mt-1 text-sm text-gray-500">Select multiple tags for your course</p>
                         </div>
                     </div>
 
                     <div class="mt-6 flex justify-end space-x-3">
                         <button type="button" onclick="closeModal()" 
-                            class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50">
                             Cancel
                         </button>
-                        <button type="submit" 
-                            class="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        <button type="submit"
+                            class="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700">
                             Save Course
                         </button>
                     </div>
@@ -548,125 +653,73 @@ $courses = $db->query($sql, [$_SESSION['user_id']])->fetchAll();
     </div>
 
     <script>
-        function editCourse(courseId) {
-            // Get course data and populate modal
-            $.ajax({
-                url: 'get_course.php',
-                type: 'POST',
-                data: { course_id: courseId },
-                dataType: 'json',
-                success: function(course) {
-                    // Reset form
-                    $('#courseForm').trigger('reset');
-                    
-                    // Populate form fields
-                    $('#course_id').val(course.id);
-                    $('#title').val(course.title);
-                    $('#description').val(course.description);
-                    $('#category').val(course.category_id);
-                    
-                    // Set content type
-                    const isVideo = /^https?:\/\//i.test(course.content);
-                    $('input[name="content_type"][value="' + (isVideo ? 'video' : 'document') + '"]').prop('checked', true).trigger('change');
-                    
-                    // Show appropriate content field and set value
-                    if (isVideo) {
-                        $('#video_content').show();
-                        $('#document_content').hide();
-                        $('#video_url').val(course.content);
-                    } else {
-                        $('#video_content').hide();
-                        $('#document_content').show();
-                        // Can't set file input value for security reasons
-                    }
-                    
-                    // Set tags
-                    if (course.tag_ids) {
-                        $('#tags').val(course.tag_ids.split(',')).trigger('change');
-                    } else {
-                        $('#tags').val(null).trigger('change');
-                    }
-                    
-                    // Update form action
-                    $('#courseForm').attr('action', 'edit_course.php');
-                    
-                    // Show modal
-                    openModal();
-                },
-                error: function(xhr) {
-                    const error = JSON.parse(xhr.responseText);
-                    alert('Error: ' + error.message);
-                }
-            });
-        }
-
-        function deleteCourse(courseId) {
-            Swal.fire({
-                title: 'Are you sure?',
-                text: "This course will be permanently deleted. This action cannot be undone!",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#dc2626',
-                cancelButtonColor: '#6b7280',
-                confirmButtonText: 'Yes, delete it!',
-                cancelButtonText: 'Cancel'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    const form = document.createElement('form');
-                    form.method = 'POST';
-                    form.action = 'delete_course.php';
-                    
-                    const input = document.createElement('input');
-                    input.type = 'hidden';
-                    input.name = 'course_id';
-                    input.value = courseId;
-                    
-                    form.appendChild(input);
-                    document.body.appendChild(form);
-                    form.submit();
-                }
-            });
-        }
-
-        $(document).ready(function() {
-            // Initialize Select2 for tags
-            $('#tags').select2({
-                placeholder: 'Select tags',
-                width: '100%'
-            });
-
-            // Handle content type change
-            $('input[name="content_type"]').change(function() {
-                if ($(this).val() === 'video') {
-                    $('#video_content').show();
-                    $('#document_content').hide();
-                    $('#document').prop('required', false);
-                    $('#video_url').prop('required', true);
-                } else {
-                    $('#video_content').hide();
-                    $('#document_content').show();
-                    $('#video_url').prop('required', false);
-                    $('#document').prop('required', true);
-                }
-            });
-
-            // Reset form when opening modal for new course
-            $('#courseForm').on('reset', function() {
-                $('#course_id').val('');
-                $('#tags').val(null).trigger('change');
-                $(this).attr('action', 'add_course.php');
-                $('input[name="content_type"][value="video"]').prop('checked', true).trigger('change');
-            });
-        });
-
         function openModal() {
+            document.getElementById('courseForm').reset();
+            document.getElementById('course_id').value = '';
             document.getElementById('courseModal').classList.remove('hidden');
+            document.querySelector('input[name="action"]').value = 'add';
         }
 
         function closeModal() {
             document.getElementById('courseModal').classList.add('hidden');
             document.getElementById('courseForm').reset();
         }
+
+        async function editCourse(courseId) {
+            // Get course data
+            const response = await fetch(`get_course.php?id=${courseId}`);
+            const course = await response.json();
+            
+            // Set form values
+            document.getElementById('course_id').value = course.id;
+            document.getElementById('title').value = course.title;
+            document.getElementById('description').value = course.description;
+            document.getElementById('type').value = course.type;
+            document.getElementById('category').value = course.category_id || '';
+            
+            // Set tags
+            const tagSelect = document.getElementById('tags');
+            for (let option of tagSelect.options) {
+                option.selected = course.tags.includes(parseInt(option.value));
+            }
+            
+            // Set action to update
+            document.querySelector('input[name="action"]').value = 'update';
+            
+            // Show modal
+            document.getElementById('courseModal').classList.remove('hidden');
+        }
+
+        async function deleteCourse(courseId) {
+            const result = await Swal.fire({
+                title: 'Are you sure?',
+                text: "You won't be able to revert this!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Yes, delete it!'
+            });
+
+            if (result.isConfirmed) {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.innerHTML = `
+                    <input type="hidden" name="action" value="delete">
+                    <input type="hidden" name="course_id" value="${courseId}">
+                `;
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+
+        // Initialize Select2 for tags
+        $(document).ready(function() {
+            $('#tags').select2({
+                placeholder: 'Select tags',
+                allowClear: true
+            });
+        });
     </script>
     <?php if(isset($_SESSION['success_message'])): ?>
         <script>

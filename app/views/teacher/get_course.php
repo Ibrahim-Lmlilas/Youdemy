@@ -9,35 +9,36 @@ if(!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'teacher') {
 }
 
 require_once __DIR__ . '/../../config/Database.php';
-require_once __DIR__ . '/../../models/TeacherCourse.php';
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $db = new Database();
-    $course = new TeacherCourse($db->getConnection());
     
     try {
-        $course_id = filter_input(INPUT_POST, 'course_id', FILTER_SANITIZE_NUMBER_INT);
+        $course_id = filter_input(INPUT_GET, 'id', FILTER_SANITIZE_NUMBER_INT);
         
-        if ($course->findById($course_id)) {
-            // Check if this course belongs to the current teacher
-            if ($course->teacher_id == $_SESSION['user_id']) {
-                echo json_encode([
-                    'id' => $course->id,
-                    'title' => $course->title,
-                    'description' => $course->description,
-                    'content' => $course->content,
-                    'category_id' => $course->category_id,
-                    'tag_ids' => $course->tag_ids
-                ]);
-            } else {
-                throw new Exception("Unauthorized access");
-            }
+        // Get course data
+        $sql = "SELECT * FROM courses WHERE id = ? AND teacher_id = ?";
+        $course = $db->query($sql, [$course_id, $_SESSION['user_id']])->fetch();
+        
+        if ($course) {
+            // Get course tags
+            $sql = "SELECT tag_id FROM course_tags WHERE course_id = ?";
+            $tags = $db->query($sql, [$course_id])->fetchAll(PDO::FETCH_COLUMN);
+            
+            echo json_encode([
+                'id' => $course['id'],
+                'title' => $course['title'],
+                'description' => $course['description'],
+                'type' => $course['type'],
+                'content_url' => $course['content_url'],
+                'category_id' => $course['category_id'],
+                'tags' => $tags
+            ]);
         } else {
-            throw new Exception("Course not found");
+            throw new Exception("Course not found or unauthorized");
         }
     } catch (Exception $e) {
         header('HTTP/1.1 400 Bad Request');
         echo json_encode(['error' => $e->getMessage()]);
     }
 }
-?>
