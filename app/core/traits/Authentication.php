@@ -39,9 +39,10 @@ trait Authentication {
     }
 
     public function login($email, $password) {
-        // Get user by email
-        $stmt = $this->db->prepare("SELECT * FROM users WHERE email = ?");
-        $stmt->execute([$email]);
+        // Get user by email AND role
+        $stmt = $this->db->prepare("SELECT * FROM users WHERE email = ? AND role = ?");
+        $role = strtolower(str_replace('Model', '', get_class($this)));
+        $stmt->execute([$email, $role]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
         // Check if user exists and password is correct
@@ -52,15 +53,6 @@ trait Authentication {
             $this->email = $user['email'];
             $this->role = $user['role'];
             $this->status = $user['status'];
-
-            // Start session and store user data
-            if (session_status() === PHP_SESSION_NONE) {
-                session_start();
-            }
-            $_SESSION['user_id'] = $this->id;
-            $_SESSION['user_name'] = $this->name;
-            $_SESSION['user_role'] = $this->role;
-            $_SESSION['user_status'] = $this->status;
 
             return true;
         }

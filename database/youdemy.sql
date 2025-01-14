@@ -113,3 +113,7 @@ INSERT INTO tags (name) VALUES
 ('Android'),
 ('Machine Learning'),
 ('UI/UX');
+
+
+INSERT INTO youdemy.users (id,name, email, password, role, status) 
+VALUES (0,'Admin', 'admin@youdemy.com', '$2y$10$yxOoWeVuxTXcxg1wGMOpHef1j1UpjXKKd/D/eahVj7AHkw2.lqjom', 'admin', 'active');

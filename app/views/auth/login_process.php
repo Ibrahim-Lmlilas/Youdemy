@@ -8,6 +8,9 @@ require_once '../../models/Admin.php';
 $email = $_POST['email'] ?? '';
 $password = $_POST['password'] ?? '';
 
+// Debug
+echo "Trying to login with: " . $email . "<br>";
+
 // Validate data
 $errors = [];
 
@@ -31,7 +34,9 @@ if(!empty($errors)) {
 // Try to login with each role
 $users = [new Student(), new Teacher(), new Admin()];
 foreach($users as $user) {
+    echo "Trying role: " . get_class($user) . "<br>";
     if($user->login($email, $password)) {
+        echo "Login successful with role: " . $user->getRole() . "<br>";
         // Check if account is active
         if($user->getStatus() !== 'active') {
             $_SESSION['errors'] = ['login' => 'Your account is pending approval'];
@@ -39,19 +44,25 @@ foreach($users as $user) {
             exit;
         }
 
+        // Store user data in session
+        $_SESSION['user_id'] = $user->getId();
+        $_SESSION['user_name'] = $user->getName();
+        $_SESSION['user_role'] = $user->getRole();
+
+        echo "Redirecting to: " . $user->getRole() . " dashboard<br>";
+
         // Redirect based on role
         switch($user->getRole()) {
             case 'student':
                 header('Location: ../student/dashboard.php');
-                break;
+                exit;
             case 'teacher':
                 header('Location: ../teacher/dashboard.php');
-                break;
+                exit;
             case 'admin':
                 header('Location: ../admin/dashboard.php');
-                break;
+                exit;
         }
-        exit;
     }
 }
 
