@@ -29,139 +29,285 @@ $userName = $_SESSION['user_name'];
             background-size: 20px 20px;
             background-repeat: repeat;
         }
-        .card {
-            background: rgb(73, 106, 255);
-            border-radius: 20px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        /* Decorative Circles */
+        body::before,
+        body::after {
+            content: '';
+            position: fixed;
+            border-radius: 50%;
+            z-index: -1;
+        }
+        body::before {
+            width: 450px;
+            height: 450px;
+            background: rgb(0, 53, 114);
+            top: -100px;
+            right: -100px;
+            animation: float 8s ease-in-out infinite;
+        }
+        body::after {
+            width: 250px;
+            height: 250px;
+            background: rgb(10, 20, 74);
+            bottom: -50px;
+            left: -50px;
+            backdrop-filter: blur(10px);
+            animation: float 7s ease-in-out infinite reverse;
+            z-index: 2;
+            opacity: 0.5;
+        }
+        @keyframes float {
+            0% {
+                transform: translate(0, 0) rotate(0deg);
+            }
+            50% {
+                transform: translate(30px, 30px) rotate(5deg);
+            }
+            100% {
+                transform: translate(0, 0) rotate(0deg);
+            }
+        }
+        .sidebar {
+            background: rgba(31, 41, 55, 0.95);
+            backdrop-filter: blur(10px);
+            min-height: calc(100vh - 4rem);
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
             position: relative;
+            z-index: 1;
+            opacity: 0.7;
+        }
+        .sidebar-link {
+            color: #9ca3af;
+            padding: 0.75rem 1rem;
+            display: flex;
+            align-items: center;
+            transition: all 0.3s ease;
+            border-radius: 0.5rem;
+            margin: 0.25rem 0.5rem;
+        }
+        .sidebar-link:hover, .sidebar-link.active {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            transform: translateX(5px);
+        }
+        .sidebar-link svg {
+            width: 1.25rem;
+            height: 1.25rem;
+            margin-right: 0.75rem;
+        }
+        .card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            transition: all 0.3s ease;
             overflow: hidden;
+            position: relative;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
         }
         .card::before {
             content: '';
             position: absolute;
-            top: -10px;
-            right: -10px;
-            width: 120px;
-            height: 120px;
-            background: rgb(0, 53, 114);
-            border-radius: 50%;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(
+                45deg,
+                rgba(0, 53, 114, 0.1),
+                rgba(10, 20, 74, 0.1)
+            );
+            transform: rotate(45deg);
             z-index: 0;
-        }
-        .card::after {
-            content: '';
-            position: absolute;
-            bottom: -20px;
-            left: -20px;
-            width: 180px;
-            height: 180px;
-            background: rgb(33, 50, 135);
-            border-radius: 50%;
-            z-index: 0;
-            opacity: 0.5;
         }
         .card-content {
             position: relative;
             z-index: 1;
-        }
-        .dashboard-card {
-            background: white;
-            border-radius: 15px;
-            transition: all 0.3s ease;
-        }
-        .dashboard-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            background: rgba(255, 255, 255, 0.9);
+            height: 100%;
+            padding: 1.5rem;
         }
         .nav-link {
-            transition: all 0.2s ease;
+            transition: all 0.3s ease;
         }
         .nav-link:hover {
             transform: translateY(-2px);
+        }
+        .stats-card {
+            background: white;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            transition: all 0.3s ease;
+        }
+        .stats-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .icon-container {
+            width: 3rem;
+            height: 3rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0.75rem;
+            background: rgba(59, 130, 246, 0.1);
         }
     </style>
 </head>
 <body class="min-h-screen">
     <nav class="bg-white shadow-lg">
-        <div class="max-w-7xl mx-auto px-4">
+        <div class="max-w-full mx-auto px-4">
             <div class="flex justify-between h-16">
-                <div class="flex">
-                    <div class="flex-shrink-0 flex items-center">
-                        <img class="h-8 w-auto" src="../../../assets/img/C.jpg" alt="Logo">
-                    </div>
+                <div class="flex items-center">
+                    <img class="h-8 w-auto" src="../../../assets/img/C.jpg" alt="Logo">
+                    <span class="ml-2 text-xl font-semibold text-gray-800">Youdemy</span>
                 </div>
                 <div class="flex items-center space-x-4">
-                    <span class="text-gray-700">Welcome, <?php echo htmlspecialchars($userName); ?></span>
-                    <a href="../auth/logout.php" class="nav-link bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md text-sm font-medium">Logout</a>
+                    <div class="relative">
+
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <span class="text-gray-700">Welcome, <?php echo htmlspecialchars($userName); ?></span>
+                        <img class="h-8 w-8 rounded-full" src="https://ui-avatars.com/api/?name=<?php echo urlencode($userName); ?>&background=random" alt="Profile">
+                        <a href="../auth/logout.php" class="bg-gradient-to-r from-red-500 to-red-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:from-red-600 hover:to-red-700 transition duration-150 ease-in-out flex items-center">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                            </svg>
+                            Logout
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
     </nav>
+    <div class="flex">
+        <!-- Sidebar -->
+        <aside class="sidebar w-64 flex-shrink-0">
+            <nav class="mt-5 px-2">
+                <a href="dashboard.php" class="sidebar-link active">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                    </svg>
+                    <span>Dashboard</span>
+                </a>
+                <a href="courses.php" class="sidebar-link">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                    </svg>
+                    <span>My Courses</span>
+                </a>
+                <a href="browse_courses.php" class="sidebar-link ">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                    <span>Browse Courses</span>
+                </a>
+                <a href="certificates.php" class="sidebar-link">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <span>Certificates</span>
+                </a>
+            </nav>
+        </aside>
 
-    <div class="max-w-7xl mx-auto py-12 px-4">
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <!-- My Courses -->
-            <div class="card dashboard-card p-6">
-                <div class="card-content">
-                    <div class="flex items-center justify-between">
-                        <div class="flex-shrink-0 bg-blue-500 rounded-md p-3">
-                            <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <!-- Main Content -->
+        <main class="flex-1 p-8">
+            <div class="flex justify-between items-center mb-6">
+                <h1 class="text-3xl font-bold text-gray-900">Student Dashboard</h1>
+                <span class="text-gray-700">Welcome, <?php echo htmlspecialchars($userName); ?></span>
+            </div>
+
+            <!-- Stats Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="stats-card">
+                    <div class="flex items-center">
+                        <div class="icon-container">
+                            <svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
                             </svg>
                         </div>
-                        <h3 class="text-xl font-semibold text-gray-900">My Courses</h3>
+                        <div class="ml-5">
+                            <h4 class="text-2xl font-semibold text-gray-700">0</h4>
+                            <p class="text-gray-600">Enrolled Courses</p>
+                        </div>
                     </div>
-                    <p class="mt-4 text-gray-600">View your enrolled courses and track progress.</p>
-                    <a href="courses.php" class="mt-6 inline-flex items-center text-blue-600 hover:text-blue-800">
-                        View Courses
-                        <svg class="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                        </svg>
-                    </a>
                 </div>
-            </div>
 
-            <!-- Course Catalog -->
-            <div class="card dashboard-card p-6">
-                <div class="card-content">
-                    <div class="flex items-center justify-between">
-                        <div class="flex-shrink-0 bg-green-500 rounded-md p-3">
-                            <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                <div class="stats-card">
+                    <div class="flex items-center">
+                        <div class="icon-container" style="background: rgba(16, 185, 129, 0.1);">
+                            <svg class="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
                             </svg>
                         </div>
-                        <h3 class="text-xl font-semibold text-gray-900">Course Catalog</h3>
+                        <div class="ml-5">
+                            <h4 class="text-2xl font-semibold text-gray-700">0%</h4>
+                            <p class="text-gray-600">Average Progress</p>
+                        </div>
                     </div>
-                    <p class="mt-4 text-gray-600">Browse and enroll in new courses.</p>
-                    <a href="catalog.php" class="mt-6 inline-flex items-center text-green-600 hover:text-green-800">
-                        Browse Courses
-                        <svg class="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                        </svg>
-                    </a>
                 </div>
-            </div>
 
-            <!-- Certificates -->
-            <div class="card dashboard-card p-6">
-                <div class="card-content">
-                    <div class="flex items-center justify-between">
-                        <div class="flex-shrink-0 bg-purple-500 rounded-md p-3">
-                            <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="stats-card">
+                    <div class="flex items-center">
+                        <div class="icon-container" style="background: rgba(139, 92, 246, 0.1);">
+                            <svg class="w-6 h-6 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"></path>
                             </svg>
                         </div>
-                        <h3 class="text-xl font-semibold text-gray-900">Certificates</h3>
+                        <div class="ml-5">
+                            <h4 class="text-2xl font-semibold text-gray-700">0</h4>
+                            <p class="text-gray-600">Completed Courses</p>
+                        </div>
                     </div>
-                    <p class="mt-4 text-gray-600">View and download your earned certificates.</p>
-                    <a href="certificates.php" class="mt-6 inline-flex items-center text-purple-600 hover:text-purple-800">
-                        View Certificates
-                        <svg class="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                        </svg>
-                    </a>
                 </div>
             </div>
-        </div>
+
+            <!-- Quick Actions -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="card">
+                    <div class="card-content">
+                        <h3 class="text-xl font-semibold mb-4">Continue Learning</h3>
+                        <p class="text-gray-600 mb-4">Pick up where you left off in your courses.</p>
+                        <a href="courses.php" class="inline-flex items-center text-blue-600 hover:text-blue-800">
+                            Go to My Courses
+                            <svg class="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-content">
+                        <h3 class="text-xl font-semibold mb-4">Browse Catalog</h3>
+                        <p class="text-gray-600 mb-4">Discover new courses and expand your knowledge.</p>
+                        <a href="catalog.php" class="inline-flex items-center text-green-600 hover:text-green-800">
+                            Explore Courses
+                            <svg class="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-content">
+                        <h3 class="text-xl font-semibold mb-4">My Achievements</h3>
+                        <p class="text-gray-600 mb-4">View your certificates and accomplishments.</p>
+                        <a href="certificates.php" class="inline-flex items-center text-purple-600 hover:text-purple-800">
+                            View Certificates
+                            <svg class="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </main>
     </div>
 </body>
 </html>

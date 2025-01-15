@@ -83,6 +83,25 @@ class Student extends User {
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    public function getAllPublishedCourses() {
+        $stmt = $this->db->prepare("
+            SELECT c.*, cat.name as category_name, u.name as teacher_name,
+                   COUNT(DISTINCT e.id) as enrolled_students,
+                   GROUP_CONCAT(DISTINCT t.name) as tags
+            FROM courses c
+            JOIN categories cat ON c.category_id = cat.id
+            JOIN users u ON c.teacher_id = u.id
+            LEFT JOIN enrollments e ON c.id = e.course_id
+            LEFT JOIN course_tags ct ON c.id = ct.course_id
+            LEFT JOIN tags t ON ct.tag_id = t.id
+            WHERE c.status = 'published'
+            GROUP BY c.id
+            ORDER BY c.created_at DESC
+        ");
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     public function getCourseProgress($courseId) {
         $stmt = $this->db->prepare("
             SELECT progress, status, enrolled_at, completed_at
