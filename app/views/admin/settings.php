@@ -1,111 +1,17 @@
 <?php
 session_start();
 
-// Check if user is logged in and is admin
+require_once __DIR__ . '/../../models/Admin.php';
+
+// Check if user is logged in and is an admin
 if(!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'admin') {
     header('Location: ../auth/login.php');
     exit();
 }
 
-require_once __DIR__ . '/../../config/Database.php';
-
-$db = new Database();
-
-// Handle form submission
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $action = $_POST['action'] ?? '';
-    
-    try {
-        switch($action) {
-            case 'addTag':
-                $name = trim($_POST['name'] ?? '');
-                if (!empty($name)) {
-                    $sql = "INSERT INTO tags (name) VALUES (?)";
-                    $success = $db->query($sql, [$name]);
-                    $_SESSION['success_message'] = 'Tag added successfully!';
-                }
-                break;
-
-            case 'updateTag':
-                $id = (int)($_POST['id'] ?? 0);
-                $name = trim($_POST['name'] ?? '');
-                if ($id > 0 && !empty($name)) {
-                    $sql = "UPDATE tags SET name = ? WHERE id = ?";
-                    $success = $db->query($sql, [$name, $id]);
-                    $_SESSION['success_message'] = 'Tag updated successfully!';
-                }
-                break;
-
-            case 'deleteTag':
-                $id = (int)($_POST['id'] ?? 0);
-                if ($id > 0) {
-                    // Delete tag associations first
-                    $sql = "DELETE FROM course_tags WHERE tag_id = ?";
-                    $db->query($sql, [$id]);
-                    
-                    // Then delete the tag
-                    $sql = "DELETE FROM tags WHERE id = ?";
-                    $success = $db->query($sql, [$id]);
-                    $_SESSION['success_message'] = 'Tag deleted successfully!';
-                }
-                break;
-
-            case 'addCategory':
-                $name = trim($_POST['name'] ?? '');
-                if (!empty($name)) {
-                    $sql = "INSERT INTO categories (name) VALUES (?)";
-                    $success = $db->query($sql, [$name]);
-                    $_SESSION['success_message'] = 'Category added successfully!';
-                }
-                break;
-
-            case 'updateCategory':
-                $id = (int)($_POST['id'] ?? 0);
-                $name = trim($_POST['name'] ?? '');
-                if ($id > 0 && !empty($name)) {
-                    $sql = "UPDATE categories SET name = ? WHERE id = ?";
-                    $success = $db->query($sql, [$name, $id]);
-                    $_SESSION['success_message'] = 'Category updated successfully!';
-                }
-                break;
-
-            case 'deleteCategory':
-                $id = (int)($_POST['id'] ?? 0);
-                if ($id > 0) {
-                    // First check if category is used in any courses
-                    $sql = "SELECT COUNT(*) as count FROM courses WHERE category_id = ?";
-                    $result = $db->query($sql, [$id])->fetch();
-                    
-                    if ($result['count'] > 0) {
-                        $_SESSION['error_message'] = 'Cannot delete category because it is used by courses. Please reassign or delete those courses first.';
-                        header('Location: settings.php');
-                        exit;
-                    }
-                    
-                    // If not used, delete the category
-                    $sql = "DELETE FROM categories WHERE id = ?";
-                    $success = $db->query($sql, [$id]);
-                    $_SESSION['success_message'] = 'Category deleted successfully!';
-                }
-                break;
-        }
-        
-        header('Location: settings.php');
-        exit;
-        
-    } catch (Exception $e) {
-        $_SESSION['error_message'] = $e->getMessage();
-    }
-}
-
-// Get tags and categories
-$sql = "SELECT * FROM tags ORDER BY name";
-$tags = $db->query($sql)->fetchAll();
-
-$sql = "SELECT * FROM categories ORDER BY name";
-$categories = $db->query($sql)->fetchAll();
+$admin = new Admin();
+$userName = $_SESSION['user_name'] ?? 'Admin';
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -188,11 +94,68 @@ $categories = $db->query($sql)->fetchAll();
             color: white;
             transform: translateX(5px);
         }
+        .sidebar-link svg {
+            width: 1.25rem;
+            height: 1.25rem;
+            margin-right: 0.75rem;
+        }
         .content-area {
-            background: rgba(255, 255, 255, 0.9);
+            background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(10px);
             border-radius: 1rem;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            position: relative;
+            z-index: 1;
+        }
+        .table-wrapper {
+            position: relative;
+            max-height: 300px;
+            overflow: hidden;
+        }
+        .table-scroll {
+            overflow-y: auto;
+            max-height: 300px;
+        }
+        .table-scroll::-webkit-scrollbar {
+            width: 8px;
+        }
+        .table-scroll::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .table-scroll::-webkit-scrollbar-thumb {
+            background-color: rgba(0, 53, 114, 0.5);
+            border-radius: 20px;
+            border: 2px solid transparent;
+        }
+        table thead {
+            position: sticky;
+            top: 0;
+            background: #f9fafb;
+            z-index: 1;
+        }
+        .user-table {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 1rem;
+            overflow: hidden;
+            max-height: calc(100vh - 13rem);
+            display: flex;
+            flex-direction: column;
+        }
+        nav.bg-white {
+            background: rgba(255, 255, 255, 0.95) !important;
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            position: relative;
+            z-index: 1;
+        }
+        .logout-btn {
+            background: linear-gradient(135deg, #ff4b4b 0%, #ff9797 100%);
+            transition: all 0.3s ease;
+        }
+        .logout-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255, 75, 75, 0.4);
         }
     </style>
 </head>
@@ -201,12 +164,14 @@ $categories = $db->query($sql)->fetchAll();
     <nav class="bg-white shadow-lg">
         <div class="max-w-full mx-auto px-4">
             <div class="flex justify-between h-16">
-                <div class="flex items-center">
-                    <h1 class="text-2xl font-bold text-gray-900">Youdemy Admin</h1>
+                <div class="flex">
+                    <div class="flex-shrink-0 flex items-center">
+                        <img class="h-8 w-auto" src="../../../assets/img/C.jpg" alt="Logo">
+                    </div>
                 </div>
-                <div class="flex items-center">
-                    <span class="text-gray-700 mr-4"><?= htmlspecialchars($_SESSION['user_name'] ?? 'Admin') ?></span>
-                    <a href="../auth/logout.php" class="text-red-600 hover:text-red-800">Logout</a>
+                <div class="flex items-center space-x-4">
+                    <span class="text-gray-700">Welcome, <?php echo htmlspecialchars($userName); ?></span>
+                    <a href="../auth/logout.php" class="logout-btn bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md text-sm font-medium transition-all duration-200">Logout</a>
                 </div>
             </div>
         </div>
@@ -216,10 +181,37 @@ $categories = $db->query($sql)->fetchAll();
         <!-- Sidebar -->
         <aside class="sidebar w-64 flex-shrink-0">
             <nav class="mt-5 px-2">
-                <a href="dashboard.php" class="sidebar-link">Dashboard</a>
-                <a href="users.php" class="sidebar-link">Users</a>
-                <a href="teacher_approvals.php" class="sidebar-link">Teacher Approvals</a>
-                <a href="settings.php" class="sidebar-link active">Settings</a>
+                <a href="dashboard.php" class="sidebar-link">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                    </svg>
+                    Dashboard
+                </a>
+                <a href="users.php" class="sidebar-link">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                    </svg>
+                    Users
+                </a>
+                <a href="teacher_approvals.php" class="sidebar-link">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    Teacher Approvals
+                </a>
+                <a href="courses.php" class="sidebar-link">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 19 7.5 19s3.332-.477 4.5-1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 19 16.5 19c-1.746 0-3.332-.477-4.5-1.253"></path>
+                    </svg>
+                    Courses
+                </a>
+                <a href="settings.php" class="sidebar-link active">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    </svg>
+                    Settings
+                </a>
             </nav>
         </aside>
 
@@ -231,11 +223,11 @@ $categories = $db->query($sql)->fetchAll();
                     <div class="bg-white shadow rounded-lg p-6">
                         <div class="flex justify-between items-center mb-6">
                             <h2 class="text-xl font-semibold text-gray-900">Tags Management</h2>
-                            <button onclick="openAddTagModal()" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
-                                Add Tag
+                            <button onclick="openAddTagModal()" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                                Add New Tag
                             </button>
                         </div>
-                        <div class="overflow-x-auto">
+                        <div class="table-wrapper">
                             <table class="min-w-full divide-y divide-gray-200">
                                 <thead class="bg-gray-50">
                                     <tr>
@@ -243,22 +235,31 @@ $categories = $db->query($sql)->fetchAll();
                                         <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                                     </tr>
                                 </thead>
-                                <tbody class="bg-white divide-y divide-gray-200">
-                                    <?php foreach($tags as $tag): ?>
-                                    <tr>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                            <?= htmlspecialchars($tag['name']) ?>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                            <button onclick="openEditTagModal(<?= $tag['id'] ?>, '<?= htmlspecialchars($tag['name']) ?>')" 
-                                                class="text-indigo-600 hover:text-indigo-900 mr-4">Edit</button>
-                                            <button onclick="deleteTag(<?= $tag['id'] ?>)" 
-                                                class="text-red-600 hover:text-red-900">Delete</button>
-                                        </td>
-                                    </tr>
-                                    <?php endforeach; ?>
-                                </tbody>
                             </table>
+                            <div class="table-scroll">
+                                <table class="min-w-full divide-y divide-gray-200">
+                                    <tbody class="bg-white divide-y divide-gray-200">
+                                        <?php 
+                                        require_once __DIR__ . '/../../config/Database.php';
+                                        $db = new Database();
+                                        $sql = "SELECT * FROM tags ORDER BY name";
+                                        $tags = $db->query($sql)->fetchAll();
+                                        foreach($tags as $tag): ?>
+                                        <tr>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                <?= htmlspecialchars($tag['name']) ?>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                                <button onclick="openEditTagModal(<?= $tag['id'] ?>, '<?= htmlspecialchars($tag['name']) ?>')" 
+                                                    class="text-indigo-600 hover:text-indigo-900 mr-4">Edit</button>
+                                                <button onclick="deleteTag(<?= $tag['id'] ?>)" 
+                                                    class="text-red-600 hover:text-red-900">Delete</button>
+                                            </td>
+                                        </tr>
+                                        <?php endforeach; ?>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
 
@@ -266,11 +267,11 @@ $categories = $db->query($sql)->fetchAll();
                     <div class="bg-white shadow rounded-lg p-6">
                         <div class="flex justify-between items-center mb-6">
                             <h2 class="text-xl font-semibold text-gray-900">Categories Management</h2>
-                            <button onclick="openAddCategoryModal()" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
-                                Add Category
+                            <button onclick="openAddCategoryModal()" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                                Add New Category
                             </button>
                         </div>
-                        <div class="overflow-x-auto">
+                        <div class="table-wrapper">
                             <table class="min-w-full divide-y divide-gray-200">
                                 <thead class="bg-gray-50">
                                     <tr>
@@ -278,22 +279,29 @@ $categories = $db->query($sql)->fetchAll();
                                         <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                                     </tr>
                                 </thead>
-                                <tbody class="bg-white divide-y divide-gray-200">
-                                    <?php foreach($categories as $category): ?>
-                                    <tr>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                            <?= htmlspecialchars($category['name']) ?>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                            <button onclick="openEditCategoryModal(<?= $category['id'] ?>, '<?= htmlspecialchars($category['name']) ?>')" 
-                                                class="text-indigo-600 hover:text-indigo-900 mr-4">Edit</button>
-                                            <button onclick="deleteCategory(<?= $category['id'] ?>)" 
-                                                class="text-red-600 hover:text-red-900">Delete</button>
-                                        </td>
-                                    </tr>
-                                    <?php endforeach; ?>
-                                </tbody>
                             </table>
+                            <div class="table-scroll">
+                                <table class="min-w-full divide-y divide-gray-200">
+                                    <tbody class="bg-white divide-y divide-gray-200">
+                                        <?php 
+                                        $sql = "SELECT * FROM categories ORDER BY name";
+                                        $categories = $db->query($sql)->fetchAll();
+                                        foreach($categories as $category): ?>
+                                        <tr>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                <?= htmlspecialchars($category['name']) ?>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                                <button onclick="openEditCategoryModal(<?= $category['id'] ?>, '<?= htmlspecialchars($category['name']) ?>')" 
+                                                    class="text-indigo-600 hover:text-indigo-900 mr-4">Edit</button>
+                                                <button onclick="deleteCategory(<?= $category['id'] ?>)" 
+                                                    class="text-red-600 hover:text-red-900">Delete</button>
+                                            </td>
+                                        </tr>
+                                        <?php endforeach; ?>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>
