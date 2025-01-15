@@ -8,12 +8,31 @@ if(!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'teacher') {
 }
 
 require_once __DIR__ . '/../../config/Database.php';
-require_once __DIR__ . '/../../models/Course.php';
-require_once __DIR__ . '/../../models/VideoCourse.php';
-require_once __DIR__ . '/../../models/DocumentCourse.php';
+require_once __DIR__ . '/../../core/abstracts/Course.php';
+require_once __DIR__ . '/../../models/TeacherCourse.php';
 
 $userName = $_SESSION['user_name'];
 $db = new Database();
+
+// Get teacher's courses with categories and tags
+$sql = "SELECT c.*, cat.name as category_name, 
+        GROUP_CONCAT(t.name) as tags 
+        FROM courses c 
+        LEFT JOIN categories cat ON c.category_id = cat.id 
+        LEFT JOIN course_tags ct ON c.id = ct.course_id 
+        LEFT JOIN tags t ON ct.tag_id = t.id 
+        WHERE c.teacher_id = ? 
+        GROUP BY c.id";
+$stmt = $db->query($sql, [$_SESSION['user_id']]);
+$courses = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Get categories for the form
+$stmt = $db->query("SELECT id, name FROM categories");
+$categories = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Get tags for the form
+$stmt = $db->query("SELECT id, name FROM tags");
+$tags = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -29,27 +48,53 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $category_id = (int)($_POST['category'] ?? 0);
                 $tags = $_POST['tags'] ?? [];
 
-                // Create course
-                $sql = "INSERT INTO courses (title, description, type, category_id, teacher_id) VALUES (?, ?, ?, ?, ?)";
-                $db->query($sql, [$title, $description, $type, $category_id, $_SESSION['user_id']]);
-                $course_id = $db->lastInsertId();
+                // Validate type
+                if (!in_array($type, ['video', 'document'])) {
+                    throw new Exception("Invalid course type");
+                }
 
-                // Handle file upload
-                if (isset($_FILES['content']) && $_FILES['content']['error'] === UPLOAD_ERR_OK) {
-                    $file = $_FILES['content'];
-                    $uploadDir = __DIR__ . '/../../public/uploads/' . $type . 's/';
+                // Initialize content_url
+                $content_url = '';
+
+                // Handle content based on type
+                if ($type === 'video') {
+                    $content_url = filter_input(INPUT_POST, 'video_url', FILTER_SANITIZE_URL);
+                    if (!$content_url) {
+                        throw new Exception("Invalid video URL");
+                    }
+                } else {
+                    // Handle document upload
+                    if (!isset($_FILES['document']) || $_FILES['document']['error'] !== UPLOAD_ERR_OK) {
+                        throw new Exception("Document upload failed");
+                    }
+
+                    $file = $_FILES['document'];
+                    $allowed_types = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                                    'application/vnd.ms-powerpoint', 'application/vnd.openxmlformats-officedocument.presentationml.presentation'];
+                    
+                    if (!in_array($file['type'], $allowed_types)) {
+                        throw new Exception("Invalid file type. Only PDF, Word, and PowerPoint documents are allowed.");
+                    }
+
+                    $uploadDir = __DIR__ . '/../../public/uploads/documents/';
                     if (!is_dir($uploadDir)) {
                         mkdir($uploadDir, 0777, true);
                     }
-                    
+
                     $fileName = uniqid() . '_' . basename($file['name']);
                     $targetPath = $uploadDir . $fileName;
-                    
-                    if (move_uploaded_file($file['tmp_name'], $targetPath)) {
-                        $sql = "UPDATE courses SET content_url = ? WHERE id = ?";
-                        $db->query($sql, ['/uploads/' . $type . 's/' . $fileName, $course_id]);
+
+                    if (!move_uploaded_file($file['tmp_name'], $targetPath)) {
+                        throw new Exception("Failed to upload document");
                     }
+
+                    $content_url = '/uploads/documents/' . $fileName;
                 }
+
+                // Create course
+                $sql = "INSERT INTO courses (title, description, type, content_url, category_id, teacher_id) VALUES (?, ?, ?, ?, ?, ?)";
+                $db->query($sql, [$title, $description, $type, $content_url, $category_id, $_SESSION['user_id']]);
+                $course_id = $db->lastInsertId();
 
                 // Add tags
                 if (!empty($tags)) {
@@ -74,12 +119,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $db->query($sql, [$title, $description, $category_id, $course_id, $_SESSION['user_id']]);
 
                 // Handle file upload if new file
-                if (isset($_FILES['content']) && $_FILES['content']['error'] === UPLOAD_ERR_OK) {
+                if (isset($_FILES['document']) && $_FILES['document']['error'] === UPLOAD_ERR_OK) {
                     // Get course type
                     $sql = "SELECT type FROM courses WHERE id = ?";
                     $type = $db->query($sql, [$course_id])->fetch()['type'];
 
-                    $file = $_FILES['content'];
+                    $file = $_FILES['document'];
                     $uploadDir = __DIR__ . '/../../public/uploads/' . $type . 's/';
                     if (!is_dir($uploadDir)) {
                         mkdir($uploadDir, 0777, true);
@@ -131,16 +176,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Get teacher's courses
-$sql = "SELECT * FROM courses WHERE teacher_id = ? ORDER BY created_at DESC";
-$courses = $db->query($sql, [$_SESSION['user_id']])->fetchAll();
-
-// Get categories and tags for form
-$sql = "SELECT * FROM categories ORDER BY name";
-$categories = $db->query($sql)->fetchAll();
-
-$sql = "SELECT * FROM tags ORDER BY name";
-$tags = $db->query($sql)->fetchAll();
 ?>
 
 <!DOCTYPE html>
@@ -463,25 +498,29 @@ $tags = $db->query($sql)->fetchAll();
             <nav class="mt-5 px-2">
                 <a href="dashboard.php" class="sidebar-link">
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                            d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
                     </svg>
                     Dashboard
                 </a>
                 <a href="courses.php" class="sidebar-link active">
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                            d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
                     </svg>
                     My Courses
                 </a>
                 <a href="students.php" class="sidebar-link">
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                            d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
                     </svg>
                     My Students
                 </a>
                 <a href="analytics.php" class="sidebar-link">
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h5m2 4h6a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2m-6 0h6"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0h2a2 2 0 012 2v3a2 2 0 01-2 2h-2a2 2 0 01-2-2v-3a2 2 0 012-2zm-1-1h2v1h-2v-1zM3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
                     </svg>
                     Analytics
                 </a>
@@ -495,63 +534,114 @@ $tags = $db->query($sql)->fetchAll();
                 <div>
                     <button onclick="openModal()" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-md text-sm font-medium transition-all duration-200 flex items-center">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                d="M12 4v16m8-8H4"></path>
                         </svg>
                         Add New Course
                     </button>
                 </div>
             </div>
 
-            <!-- Course Grid -->
+            
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <?php foreach($courses as $course): ?>
-                <div class="course-card">
+                <div class="course-card bg-white rounded-lg shadow-md p-6">
                     <div class="flex justify-between items-start mb-4">
                         <div class="flex-1">
-                            <h3><?php echo htmlspecialchars($course['title']); ?></h3>
-                            <p class="text-sm text-gray-500 mb-1">
-                                <?php 
-                                    $content_type = filter_var($course['content'], FILTER_VALIDATE_URL) ? 'Video' : 'Document';
-                                    echo $content_type . ' Course';
-                                ?>
-                            </p>
-                            <p class="text-gray-600 text-sm mb-3"><?php echo htmlspecialchars($course['description']); ?></p>
-                        </div>
-                        <div class="flex space-x-2 ml-4">
-                            <button onclick="editCourse(<?php echo $course['id']; ?>)" class="text-blue-600 hover:text-blue-800 p-2 rounded-full hover:bg-blue-50">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                </svg>
-                            </button>
-                            <button onclick="deleteCourse(<?php echo $course['id']; ?>)" class="text-red-600 hover:text-red-800 p-2 rounded-full hover:bg-red-50">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="flex justify-between items-center text-sm border-t pt-3 mt-3">
-                        <div class="flex items-center space-x-4">
-                            <span class="text-gray-500">Status: <span class="font-medium"><?php echo ucfirst($course['status']); ?></span></span>
-                            <span class="text-gray-500">Created: <span class="font-medium"><?php echo date('M j, Y', strtotime($course['created_at'])); ?></span></span>
-                        </div>
-                        <div>
-                            <?php if(filter_var($course['content'], FILTER_VALIDATE_URL)): ?>
-                                <a href="<?php echo htmlspecialchars($course['content']); ?>" target="_blank" class="text-blue-600 hover:text-blue-800 flex items-center">
-                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            <!-- Icon based on course type -->
+                            <div class="flex items-center gap-3 mb-2">
+                                <?php if($course['type'] === 'video'): ?>
+                                    <svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                            d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                    </svg>
+                                <?php else: ?>
+                                    <svg class="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                            d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                                    </svg>
+                                <?php endif; ?>
+                                <h3 class="text-xl font-semibold text-gray-900"><?= htmlspecialchars($course['title']) ?></h3>
+                            </div>
+                            <p class="text-gray-600 mb-4"><?= htmlspecialchars($course['description']) ?></p>
+                            
+                            <!-- Category and Tags -->
+                            <div class="mb-4">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                            d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                                    </svg>
+                                    <span class="text-sm font-medium text-gray-700">
+                                        Category: <span class="text-blue-600"><?= htmlspecialchars($course['category_name']) ?></span>
+                                    </span>
+                                </div>
+                                <?php if(!empty($course['tags'])): ?>
+                                <div class="flex flex-wrap gap-2">
+                                    <?php foreach(explode(',', $course['tags']) as $tag): ?>
+                                        <span class="px-2 py-1 bg-gray-100 text-gray-600 rounded-full text-xs">
+                                            <?= htmlspecialchars(trim($tag)) ?>
+                                        </span>
+                                    <?php endforeach; ?>
+                                </div>
+                                <?php endif; ?>
+                            </div>
+                            
+                            <!-- Watch/Download Button -->
+                            <?php if($course['type'] === 'video'): ?>
+                                <a href="<?= htmlspecialchars($course['content_url']) ?>" target="_blank" 
+                                   class="inline-flex items-center px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors">
+                                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                            d="M14.752 11.168l-3.197-2.132A1 1 0 0110 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                            d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                     </svg>
                                     Watch Video
                                 </a>
                             <?php else: ?>
-                                <a href="/uploads/documents/<?php echo htmlspecialchars($course['content']); ?>" target="_blank" class="text-blue-600 hover:text-blue-800 flex items-center">
-                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                <a href="download.php?file=<?= basename($course['content_url']) ?>" 
+                                   class="inline-flex items-center px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors">
+                                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                                     </svg>
-                                    View Document
+                                    Download Document
                                 </a>
                             <?php endif; ?>
+                        </div>
+
+                        <!-- Course Actions -->
+                        <div class="flex space-x-2">
+                            <button onclick="editCourse(<?= $course['id'] ?>)" 
+                                class="text-blue-600 hover:text-blue-800">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                </svg>
+                            </button>
+                            <form action="delete_course.php" method="POST" class="inline" 
+                                onsubmit="return confirm('Are you sure you want to delete this course?');">
+                                <input type="hidden" name="course_id" value="<?= $course['id'] ?>">
+                                <button type="submit" class="text-red-600 hover:text-red-800">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 flex items-center justify-between text-sm text-gray-500">
+                        <div>Created: <?= date('M j, Y', strtotime($course['created_at'])) ?></div>
+                        <div class="flex items-center">
+                            <span class="px-2 py-1 rounded-full text-xs <?= 
+                                $course['status'] === 'published' ? 'bg-green-100 text-green-800' : 
+                                ($course['status'] === 'draft' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800') 
+                            ?>">
+                                <?= ucfirst($course['status']) ?>
+                            </span>
                         </div>
                     </div>
                 </div>
@@ -567,7 +657,8 @@ $tags = $db->query($sql)->fetchAll();
                 <h3 class="text-lg font-semibold text-gray-900">Add New Course</h3>
                 <button onclick="closeModal()" class="text-gray-400 hover:text-gray-500">
                     <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                            d="M6 18L18 6M6 6l12 12" />
                     </svg>
                 </button>
             </div>
@@ -592,7 +683,7 @@ $tags = $db->query($sql)->fetchAll();
 
                         <div class="form-group">
                             <label class="block text-sm font-medium text-gray-700" for="type">Course Type</label>
-                            <select id="type" name="type" required
+                            <select id="type" name="type" required onchange="handleTypeChange()"
                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                                 <option value="">Select type</option>
                                 <option value="video">Video Course</option>
@@ -600,9 +691,20 @@ $tags = $db->query($sql)->fetchAll();
                             </select>
                         </div>
 
-                        <div class="form-group">
-                            <label class="block text-sm font-medium text-gray-700" for="content">Course Content</label>
-                            <input type="file" id="content" name="content" required
+                        <!-- Video URL input (for video courses) -->
+                        <div id="videoInput" class="form-group hidden">
+                            <label class="block text-sm font-medium text-gray-700" for="video_url">Video URL</label>
+                            <input type="url" id="video_url" name="video_url" placeholder="Enter YouTube or Vimeo URL"
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                            <p class="mt-1 text-sm text-gray-500">
+                                Enter a valid YouTube or Vimeo video URL
+                            </p>
+                        </div>
+
+                        <!-- Document upload input (for document courses) -->
+                        <div id="documentInput" class="form-group hidden">
+                            <label class="block text-sm font-medium text-gray-700" for="document">Course Document</label>
+                            <input type="file" id="document" name="document" accept=".pdf,.doc,.docx,.ppt,.pptx"
                                 class="mt-1 block w-full text-sm text-gray-500
                                     file:mr-4 file:py-2 file:px-4
                                     file:rounded-md file:border-0
@@ -610,8 +712,7 @@ $tags = $db->query($sql)->fetchAll();
                                     file:bg-blue-50 file:text-blue-700
                                     hover:file:bg-blue-100">
                             <p class="mt-1 text-sm text-gray-500">
-                                For video courses: Upload MP4, WebM, or OGG files
-                                For document courses: Upload PDF or Word documents
+                                Accepted formats: PDF, Word documents (.doc, .docx), PowerPoint (.ppt, .pptx)
                             </p>
                         </div>
 
@@ -655,14 +756,35 @@ $tags = $db->query($sql)->fetchAll();
     <script>
         function openModal() {
             document.getElementById('courseForm').reset();
-            document.getElementById('course_id').value = '';
+            document.getElementById('videoInput').classList.add('hidden');
+            document.getElementById('documentInput').classList.add('hidden');
             document.getElementById('courseModal').classList.remove('hidden');
-            document.querySelector('input[name="action"]').value = 'add';
         }
 
         function closeModal() {
             document.getElementById('courseModal').classList.add('hidden');
             document.getElementById('courseForm').reset();
+        }
+
+        function handleTypeChange() {
+            const type = document.getElementById('type').value;
+            const videoInput = document.getElementById('videoInput');
+            const documentInput = document.getElementById('documentInput');
+            
+            // Hide both inputs first
+            videoInput.classList.add('hidden');
+            documentInput.classList.add('hidden');
+            
+            // Show the relevant input based on type
+            if (type === 'video') {
+                videoInput.classList.remove('hidden');
+                document.getElementById('video_url').required = true;
+                document.getElementById('document').required = false;
+            } else if (type === 'document') {
+                documentInput.classList.remove('hidden');
+                document.getElementById('document').required = true;
+                document.getElementById('video_url').required = false;
+            }
         }
 
         async function editCourse(courseId) {

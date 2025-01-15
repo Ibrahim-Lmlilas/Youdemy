@@ -15,10 +15,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $conn = $db->getConnection();
 
     try {
-        // Start transaction
+        
         $conn->beginTransaction();
 
-        // Basic course information
+        
         $title = filter_input(INPUT_POST, 'title', FILTER_SANITIZE_STRING);
         $description = filter_input(INPUT_POST, 'description', FILTER_SANITIZE_STRING);
         $category_id = filter_input(INPUT_POST, 'category_id', FILTER_SANITIZE_NUMBER_INT);

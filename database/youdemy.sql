@@ -58,6 +58,8 @@ CREATE TABLE courses (
     FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE
 );
 
+ALTER TABLE courses ADD COLUMN type ENUM('video', 'document');
+
 -- Enrollments table
 CREATE TABLE enrollments (
     id INT PRIMARY KEY AUTO_INCREMENT,

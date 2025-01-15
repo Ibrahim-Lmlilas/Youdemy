@@ -22,11 +22,16 @@ class Database {
             $stmt->execute($params);
             return $stmt;
         } catch(PDOException $e) {
-            die("Query Error: " . $e->getMessage());
+            throw new Exception("Query Error: " . $e->getMessage());
         }
     }
 
     public function getConnection() {
         return $this->conn;
+    }
+
+    // Zdt had method jdid
+    public function lastInsertId() {
+        return $this->conn->lastInsertId();
     }
 }

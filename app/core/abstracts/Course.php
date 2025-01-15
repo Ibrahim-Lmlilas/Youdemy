@@ -8,6 +8,8 @@ abstract class Course {
     protected $title;
     protected $description;
     protected $content;
+    protected $type;
+    protected $content_url;
     protected $image;
     protected $price;
     protected $category_id;
@@ -25,6 +27,8 @@ abstract class Course {
     public function getTitle() { return $this->title; }
     public function getDescription() { return $this->description; }
     public function getContent() { return $this->content; }
+    public function getType() { return $this->type; }
+    public function getContentUrl() { return $this->content_url; }
     public function getImage() { return $this->image; }
     public function getPrice() { return $this->price; }
     public function getCategoryId() { return $this->category_id; }
@@ -38,20 +42,29 @@ abstract class Course {
     public function setTitle($title) { $this->title = $title; }
     public function setDescription($description) { $this->description = $description; }
     public function setContent($content) { $this->content = $content; }
+    public function setType($type) { $this->type = $type; }
+    public function setContentUrl($url) { $this->content_url = $url; }
     public function setImage($image) { $this->image = $image; }
     public function setPrice($price) { $this->price = $price; }
-    public function setCategoryId($category_id) { $this->category_id = $category_id; }
-    public function setTeacherId($teacher_id) { $this->teacher_id = $teacher_id; }
+    public function setCategoryId($id) { $this->category_id = $id; }
+    public function setTeacherId($id) { $this->teacher_id = $id; }
     public function setStatus($status) { $this->status = $status; }
-    public function setCreatedAt($created_at) { $this->created_at = $created_at; }
-    public function setUpdatedAt($updated_at) { $this->updated_at = $updated_at; }
+    public function setCreatedAt($date) { $this->created_at = $date; }
+    public function setUpdatedAt($date) { $this->updated_at = $date; }
 
     // Abstract methods that must be implemented by child classes
     abstract public function save();
     abstract public function update();
     abstract public function delete();
-    abstract public function findById($id);
     abstract public function findAll();
+
+    public static function findById($id) {
+        $db = Database::getInstance()->getConnection();
+        $sql = "SELECT * FROM courses WHERE id = ?";
+        $stmt = $db->prepare($sql);
+        $stmt->execute([$id]);
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
 
     // Common methods for all courses
     public function getCategory() {

@@ -7,7 +7,24 @@ if(!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'teacher') {
     exit;
 }
 
+require_once __DIR__ . '/../../config/Database.php';
+require_once __DIR__ . '/../../models/TeacherCourse.php';
+
 $userName = $_SESSION['user_name'];
+
+// Get course counts
+$db = new Database();
+$conn = $db->getConnection();
+
+// Get total courses count
+$stmt = $conn->prepare("SELECT COUNT(*) as total FROM courses WHERE teacher_id = ?");
+$stmt->execute([$_SESSION['user_id']]);
+$totalCourses = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
+
+// Get active courses count
+$stmt = $conn->prepare("SELECT COUNT(*) as active FROM courses WHERE teacher_id = ? AND status = 'active'");
+$stmt->execute([$_SESSION['user_id']]);
+$activeCourses = $stmt->fetch(PDO::FETCH_ASSOC)['active'];
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -216,23 +233,22 @@ $userName = $_SESSION['user_name'];
                         </div>
                         <div class="ml-4">
                             <h3 class="text-lg font-semibold text-gray-900">Active Courses</h3>
-                            <p class="text-3xl font-bold text-green-500">8</p>
+                            <p class="text-3xl font-bold text-green-500"><?php echo $activeCourses; ?></p>
                         </div>
                     </div>
                 </div>
 
-                <!-- Total Views Card -->
+                <!-- Total Courses Card -->
                 <div class="stat-card">
                     <div class="flex items-center">
                         <div class="p-3 rounded-full bg-yellow-100 bg-opacity-75">
                             <svg class="h-8 w-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                             </svg>
                         </div>
                         <div class="ml-4">
-                            <h3 class="text-lg font-semibold text-gray-900">Total Views</h3>
-                            <p class="text-3xl font-bold text-yellow-500">2.3k</p>
+                            <h3 class="text-lg font-semibold text-gray-900">Total Courses</h3>
+                            <p class="text-3xl font-bold text-yellow-500"><?php echo $totalCourses; ?></p>
                         </div>
                     </div>
                 </div>
@@ -312,7 +328,7 @@ $userName = $_SESSION['user_name'];
                             <option value="">Select Category</option>
                             <?php
                             // Fetch categories from database
-                            $stmt = $db->query("SELECT id, name FROM categories");
+                            $stmt = $conn->query("SELECT id, name FROM categories");
                             while($category = $stmt->fetch(PDO::FETCH_ASSOC)) {
                                 echo "<option value='" . $category['id'] . "'>" . htmlspecialchars($category['name']) . "</option>";
                             }
