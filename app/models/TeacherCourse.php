@@ -3,8 +3,8 @@
 require_once __DIR__ . '/../core/abstracts/Course.php';
 
 class TeacherCourse extends Course {
-    public function __construct() {
-        parent::__construct();
+    public function __construct($db) {
+        parent::__construct($db);
     }
 
     public function save() {
@@ -58,12 +58,12 @@ class TeacherCourse extends Course {
             return false;
         }
     }
-
+    
     public function delete() {
         try {
             // Start transaction
             $this->db->beginTransaction();
-
+            
             // Delete from course_tags
             $stmt = $this->db->prepare("DELETE FROM course_tags WHERE course_id = ?");
             $stmt->execute([$this->getId()]);
@@ -76,20 +76,20 @@ class TeacherCourse extends Course {
             $stmt = $this->db->prepare("DELETE FROM comments WHERE course_id = ?");
             $stmt->execute([$this->getId()]);
 
-            // Delete from notifications related to this course
-            $stmt = $this->db->prepare("DELETE FROM notifications WHERE reference_id = ? AND type LIKE 'course%'");
-            $stmt->execute([$this->getId()]);
+            // Delete related notifications (based on course type)
+            $stmt = $this->db->prepare("DELETE FROM notifications WHERE user_id = ? AND type = 'course'");
+            $stmt->execute([$this->getTeacherId()]);
 
-            // Finally delete from courses
+            // Finally delete the course
             $stmt = $this->db->prepare("DELETE FROM courses WHERE id = ? AND teacher_id = ?");
-            $success = $stmt->execute([$this->getId(), $this->getTeacherId()]);
+            $result = $stmt->execute([$this->getId(), $this->getTeacherId()]);
 
-            if ($success) {
+            if ($result && $stmt->rowCount() > 0) {
                 $this->db->commit();
                 return true;
             } else {
                 $this->db->rollBack();
-                return false;
+                throw new Exception("Failed to delete course. Course may not exist or you don't have permission.");
             }
         } catch (Exception $e) {
             $this->db->rollBack();
@@ -110,6 +110,29 @@ class TeacherCourse extends Course {
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    public function findById($id) {
+        $sql = "SELECT * FROM courses WHERE id = ?";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$id]);
+        
+        $course = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($course) {
+            $this->id = $course['id'];
+            $this->title = $course['title'];
+            $this->description = $course['description'];
+            $this->content = $course['content'];
+            $this->type = $course['type'];
+            $this->content_url = $course['content_url'];
+            $this->category_id = $course['category_id'];
+            $this->teacher_id = $course['teacher_id'];
+            $this->status = $course['status'];
+            $this->created_at = $course['created_at'];
+            $this->updated_at = $course['updated_at'];
+            return true;
+        }
+        return false;
+    }
+
     public function getTeacherCourses($teacherId) {
         $sql = "SELECT c.*, GROUP_CONCAT(t.name) as tags
                 FROM courses c
@@ -126,14 +149,14 @@ class TeacherCourse extends Course {
 
     public function getActiveCourses($teacherId) {
         $sql = "SELECT COUNT(*) as active_count FROM courses WHERE teacher_id = ? AND status = 'published'";
-        $result = $this->db->query($sql, [$teacherId])->fetch();
-        return $result['active_count'];
+        // $result = $this->db->query($sql, [$teacherId])->fetch();
+        // return $result['active_count'];
     }
 
     public function getTotalCourses($teacherId) {
         $sql = "SELECT COUNT(*) as total_count FROM courses WHERE teacher_id = ?";
-        $result = $this->db->query($sql, [$teacherId])->fetch();
-        return $result['total_count'];
+        // $result = $this->db->query($sql, [$teacherId])->fetch();
+        // return $result['total_count'];
     }
 
     public function update() {

@@ -18,8 +18,8 @@ abstract class Course {
     protected $created_at;
     protected $updated_at;
 
-    public function __construct($db = null) {
-        $this->db = $db ?? Database::getInstance()->getConnection();
+    public function __construct($db) {
+        $this->db = $db;
     }
 
     // Getters
@@ -58,13 +58,13 @@ abstract class Course {
     abstract public function delete();
     abstract public function findAll();
 
-    public static function findById($id) {
-        $db = Database::getInstance()->getConnection();
-        $sql = "SELECT * FROM courses WHERE id = ?";
-        $stmt = $db->prepare($sql);
-        $stmt->execute([$id]);
-        return $stmt->fetch(PDO::FETCH_ASSOC);
-    }
+    // public static function findById($id) {
+    //     $db = Database::getInstance()->getConnection();
+    //     $sql = "SELECT * FROM courses WHERE id = ?";
+    //     $stmt = $db->prepare($sql);
+    //     $stmt->execute([$id]);
+    //     return $stmt->fetch(PDO::FETCH_ASSOC);
+    // }
 
     // Common methods for all courses
     public function getCategory() {

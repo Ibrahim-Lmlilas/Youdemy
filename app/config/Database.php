@@ -30,7 +30,7 @@ class Database {
         return $this->conn;
     }
 
-    // Zdt had method jdid
+    //  had method jdid
     public function lastInsertId() {
         return $this->conn->lastInsertId();
     }
