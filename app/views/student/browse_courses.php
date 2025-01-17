@@ -234,63 +234,11 @@ $categories = array_unique(array_column($courses, 'category'));
     </style>
 </head>
 <body class="min-h-screen">
-    <!-- Navigation -->
-    <nav class="bg-white shadow-lg">
-        <div class="max-w-full mx-auto px-4">
-            <div class="flex justify-between h-16">
-                <div class="flex items-center">
-                    <img class="h-8 w-auto" src="../../../assets/img/C.jpg" alt="Logo">
-                    <span class="ml-2 text-xl font-semibold text-gray-800">Youdemy</span>
-                </div>
-                <div class="flex items-center space-x-4">
-
-                    <div class="flex items-center space-x-3">
-                        <span class="text-gray-700">Welcome, <?php echo htmlspecialchars($userName); ?></span>
-                        <img class="h-8 w-8 rounded-full" src="https://ui-avatars.com/api/?name=<?php echo urlencode($userName); ?>&background=random" alt="Profile">
-                        <a href="../auth/logout.php" class="bg-gradient-to-r from-red-500 to-red-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:from-red-600 hover:to-red-700 transition duration-150 ease-in-out flex items-center">
-                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
-                            </svg>
-                            Logout
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </nav>
+    
+<?php include '../components/navbar.php'; ?>
 
     <div class="flex">
-        <!-- Sidebar -->
-        <aside class="sidebar w-64 flex-shrink-0">
-            <nav class="mt-5 px-2">
-                <a href="dashboard.php" class="sidebar-link">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
-                    </svg>
-                    <span>Dashboard</span>
-                </a>
-                <a href="courses.php" class="sidebar-link">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                    </svg>
-                    <span>My Courses</span>
-                </a>
-                <a href="browse_courses.php" class="sidebar-link active">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                    </svg>
-                    <span>Browse Courses</span>
-                </a>
-                <a href="certificates.php" class="sidebar-link">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
-                    <span>Certificates</span>
-                </a>
-            </nav>
-        </aside>
-
-        <!-- Main Content -->
+        <?php include '../components/sidebar.php'; ?>
         <main class="flex-1 p-8">
             <div class="flex justify-between items-center mb-6">
                 <h1 class="text-3xl font-bold text-gray-900">Browse Courses</h1>
