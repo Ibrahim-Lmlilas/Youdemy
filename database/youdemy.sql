@@ -1,9 +1,7 @@
--- Drop database if exists
-DROP DATABASE IF EXISTS youdemy;
-CREATE DATABASE youdemy;
-USE youdemy;
+CREATE DATABASE  YooudemY;
 
--- Users table
+USE YooudemY;
+
 CREATE TABLE users (
     id INT PRIMARY KEY AUTO_INCREMENT,
     name VARCHAR(100) NOT NULL,
@@ -11,11 +9,9 @@ CREATE TABLE users (
     password VARCHAR(255) NOT NULL,
     role ENUM('student', 'teacher', 'admin') NOT NULL,
     status ENUM('pending', 'active', 'suspended') DEFAULT 'pending',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-);
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
 
--- Categories table
 CREATE TABLE categories (
     id INT PRIMARY KEY AUTO_INCREMENT,
     name VARCHAR(100) NOT NULL,
@@ -23,103 +19,82 @@ CREATE TABLE categories (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Tags table
-CREATE TABLE IF NOT EXISTS `tags` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `name` varchar(50) NOT NULL,
-  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `name` (`name`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE Table tags(
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(100) NOT NULL UNIQUE ,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
--- Course Tags (Many-to-Many)
-CREATE TABLE IF NOT EXISTS `course_tags` (
-  `course_id` int(11) NOT NULL,
-  `tag_id` int(11) NOT NULL,
-  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`course_id`,`tag_id`),
-  KEY `tag_id` (`tag_id`),
-  CONSTRAINT `course_tags_ibfk_1` FOREIGN KEY (`course_id`) REFERENCES `courses` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `course_tags_ibfk_2` FOREIGN KEY (`tag_id`) REFERENCES `tags` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- Courses table
-CREATE TABLE courses (
+CREATE Table courses(
     id INT PRIMARY KEY AUTO_INCREMENT,
     teacher_id INT NOT NULL,
     category_id INT NOT NULL,
     title VARCHAR(255) NOT NULL,
+    type ENUM('video', 'document'),
     description TEXT,
-    content TEXT,
     status ENUM('draft', 'published', 'archived') DEFAULT 'draft',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (teacher_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE
 );
 
-ALTER TABLE courses ADD COLUMN type ENUM('video', 'document');
 
--- Enrollments table
-CREATE TABLE enrollments (
+CREATE Table course_tags(
+    course_id int(11) NOT NULL,
+    tag_id int(11) NOT NULL,
+    FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE,
+    FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE
+);
+
+CREATE Table enrollments(
     id INT PRIMARY KEY AUTO_INCREMENT,
-    student_id INT,
-    course_id INT,
-    progress INT DEFAULT 0,
-    status ENUM('active', 'completed', 'dropped') DEFAULT 'active',
+    student_id INT NOT NULL,
+    course_id INT NOT NULL,
     enrolled_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    completed_at TIMESTAMP NULL,
     FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE
 );
 
--- Comments table
-CREATE TABLE comments (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    user_id INT,
-    course_id INT,
-    content TEXT NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE
-);
+-- Password: HAKARI
+INSERT INTO users (name, email, password, role, status) VALUES
+('Admin User', 'admin@youdemy.com', '$2y$10$mcqddzUGxr.hu1LxlP9DZelrmmWveclZZafbOAYAXDvwER7EElQYO', 'admin', 'active'),
+('Teacher One', 'teacher1@youdemy.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'teacher', 'active'),
+('Student One', 'student1@youdemy.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'student', 'active');
 
--- Notifications table
-CREATE TABLE notifications (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    user_id INT,
-    title VARCHAR(255) NOT NULL,
-    message TEXT NOT NULL,
-    type ENUM('account', 'course', 'system') NOT NULL,
-    is_read BOOLEAN DEFAULT FALSE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-);
+INSERT INTO categories (name, description) VALUES
+('Web Development', 'Learn web development from scratch'),
+('Mobile Development', 'Create mobile apps for iOS and Android'),
+('Data Science', 'Master data science and machine learning');
 
--- Insert default admin
-INSERT INTO users (name, email, password, role, status) 
-VALUES ('Admin', 'admin@youdemy.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin', 'active');
-
--- Insert sample categories
-INSERT INTO categories (name, description) VALUES 
-('Web Development', 'Learn web development technologies'),
-('Mobile Development', 'Build mobile applications'),
-('Data Science', 'Learn data analysis and machine learning'),
-('Design', 'Master graphic and UI/UX design');
-
--- Insert sample tags
-INSERT INTO tags (name) VALUES 
+INSERT INTO tags (name) VALUES
 ('PHP'),
 ('JavaScript'),
-('Python'),
-('React'),
-('Angular'),
-('Vue'),
-('iOS'),
-('Android'),
-('Machine Learning'),
-('UI/UX');
+('Python');
 
+INSERT INTO courses (teacher_id, category_id, title, type, description, status) VALUES
+(2, 1, 'PHP Fundamentals', 'video', 'Learn PHP basics and advanced concepts', 'published'),
+(2, 1, 'JavaScript Mastery', 'video', 'Master JavaScript programming', 'published'),
+(2, 2, 'Mobile App Development', 'document', 'Create your first mobile app', 'published'),
+(2, 3, 'Python for Data Science', 'video', 'Learn Python for data analysis', 'draft');
 
-INSERT INTO youdemy.users (id,name, email, password, role, status) 
-VALUES (0,'Admin', 'admin@youdemy.com', '$2y$10$yxOoWeVuxTXcxg1wGMOpHef1j1UpjXKKd/D/eahVj7AHkw2.lqjom', 'admin', 'active');
+INSERT INTO course_tags (course_id, tag_id) VALUES
+(1, 1), 
+(2, 2);
+
+INSERT INTO enrollments (student_id, course_id) VALUES
+(2, 1), 
+(2, 2); 
+
+ALTER TABLE courses 
+ADD COLUMN url VARCHAR(255) AFTER description,
+ADD COLUMN document_path VARCHAR(255) AFTER url;
+
+UPDATE courses 
+SET url = CASE 
+    WHEN type = 'video' THEN 'https://www.youtube.com/watch?v=example'
+    ELSE ''
+END,
+document_path = CASE 
+    WHEN type = 'document' THEN '/uploads/courses/documents/example.pdf'
+    ELSE ''
+END;
