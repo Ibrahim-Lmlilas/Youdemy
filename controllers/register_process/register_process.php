@@ -31,7 +31,7 @@ if(empty($role) || !in_array($role, ['student', 'teacher'])) {
 
 if(!empty($errors)) {
     $_SESSION['errors'] = $errors;
-    header('Location: /yooudemy/views/auth/register.php');
+    header('Location: /Youdemy/views/auth/register.php');
     exit;
 }
 
@@ -48,10 +48,10 @@ if($user->register($name, $email, $password, $role)) {
     } else {
         $_SESSION['success'] = "Registration successful! You can now login.";
     }
-    header('Location: /yooudemy/views/auth/login.php');
+    header('Location: /Youdemy/views/auth/login.php');
     exit;
 } else {
     $_SESSION['errors'] = ['email' => 'Email already exists'];
-    header('Location: /yooudemy/views/auth/register.php');
+    header('Location: /Youdemy/views/auth/register.php');
     exit;
 }

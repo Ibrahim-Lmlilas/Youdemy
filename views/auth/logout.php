@@ -1,5 +1,5 @@
 <?php
 session_start();
 session_destroy();
-header('Location: /yooudemy/views/auth/login.php');
+header('Location: /Youdemy/views/auth/login.php');
 exit;

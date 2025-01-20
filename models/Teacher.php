@@ -3,42 +3,15 @@
 require_once __DIR__ . '/abstracts/User.php';
 require_once __DIR__ . '/../config/Database.php';
 
-/**
- * Had class khas b Teacher (Ostad) f system
- * Fih ga3 functions li kay7taj prof: tchof courses dyalo, students dyalo...
- */
+
 class Teacher extends User {
     private $courses = [];
 
-    // Setters
-    public function setId($id) {
-        parent::setId($id); // Call parent setId
-    }
 
-    public function setName($name) {
-        parent::setName($name); // Call parent setName
-    }
-
-    public function setEmail($email) {
-        parent::setEmail($email); // Call parent setEmail
-    }
-
-    public function setStatus($status) {
-        parent::setStatus($status); // Call parent setStatus
-    }
-
-    /**
-     * Kat3tik role dyal had user
-     * Khassna n3rfo wach student wla teacher bach n3rfo permissions dyalo
-     */
     public function getRole() {
         return 'teacher';
     }
 
-    /**
-     * Kat3tik permissions dyal prof
-     * 3ndo l7a9 bach: yzid cours, y3dl cours, y7ydo, w ychof students dyalo
-     */
     public function getPermissions() {
         return [
             'can_create_course' => true,
@@ -48,24 +21,28 @@ class Teacher extends User {
         ];
     }
 
-    /**
-     * Kat3tik courses dyal teacher
-     */
+
     public function getCourses() {
         try {
             $db = new Database();
             $conn = $db->getConnection();
 
-            $query = "SELECT * FROM courses WHERE teacher_id = ?";
+            $query = "SELECT c.*, GROUP_CONCAT(t.name) as tags 
+                     FROM courses c 
+                     LEFT JOIN course_tags ct ON c.id = ct.course_id 
+                     LEFT JOIN tags t ON ct.tag_id = t.id 
+                     WHERE c.teacher_id = ? 
+                     GROUP BY c.id";
             $stmt = $conn->prepare($query);
             $stmt->execute([$this->id]);
             
             $courses = $stmt->fetchAll(PDO::FETCH_ASSOC);
             
-            // Debug
-            error_log("Teacher ID: " . $this->id);
-            error_log("Courses found: " . print_r($courses, true));
+            foreach ($courses as &$course) {
+                $course['tags'] = $course['tags'] ? explode(',', $course['tags']) : [];
+            }
             
+
             return $courses;
         } catch(PDOException $e) {
             error_log("Error in getCourses: " . $e->getMessage());
@@ -73,11 +50,7 @@ class Teacher extends User {
         }
     }
 
-    /**
-     * Katjib ga3 cours m3a id
-     * @param int $courseId Id dyal cours
-     * @return array Cours m3a id
-     */
+
     public function getCourse($courseId) {
         try {
             $db = new Database();
@@ -100,209 +73,83 @@ class Teacher extends User {
         }
     }
 
-    /**
-     * Create cours jdid
-     * @param array $data Data dyal cours
-     * @return bool True wla false
-     */
+
     public function createCourse($data) {
         try {
             $db = new Database();
             $conn = $db->getConnection();
 
-            // Start transaction
             $conn->beginTransaction();
 
-            // Insert course
-            $query = "INSERT INTO courses (teacher_id, category_id, title, type, description, status, url, document_path) 
+            $query = "INSERT INTO courses (teacher_id, category_id, title, type, description, status, url, document_path)
                      VALUES (:teacher_id, :category_id, :title, :type, :description, :status, :url, :document_path)";
             
             $stmt = $conn->prepare($query);
-            $stmt->bindParam(':teacher_id', $this->id);
-            $stmt->bindParam(':category_id', $data['category_id']);
-            $stmt->bindParam(':title', $data['title']);
-            $stmt->bindParam(':type', $data['type']);
-            $stmt->bindParam(':description', $data['description']);
-            $stmt->bindParam(':status', $data['status'] ?? 'draft');
-            $stmt->bindParam(':url', $data['type'] === 'video' ? $data['url'] : null);
-            $stmt->bindParam(':document_path', $data['type'] === 'document' ? $data['document_path'] : null);
-            
-            if (!$stmt->execute()) {
-                $conn->rollBack();
-                return false;
-            }
+            $stmt->execute([
+                'teacher_id' => $this->id,
+                'category_id' => $data['category_id'],
+                'title' => $data['title'],
+                'type' => $data['type'],
+                'description' => $data['description'],
+                'status' => $data['status'],
+                'url' => $data['url'],
+                'document_path' => $data['document_path']
+            ]);
 
             $course_id = $conn->lastInsertId();
 
-            // Insert course tags
-            if (!empty($data['tag_ids'])) {
-                $query = "INSERT INTO course_tags (course_id, tag_id) VALUES (:course_id, :tag_id)";
-                $stmt = $conn->prepare($query);
-
-                foreach ($data['tag_ids'] as $tag_id) {
-                    $stmt->bindParam(':course_id', $course_id);
-                    $stmt->bindParam(':tag_id', $tag_id);
-                    
-                    if (!$stmt->execute()) {
-                        $conn->rollBack();
-                        return false;
-                    }
+            if (!empty($data['tags'])) {
+                $tag_query = "INSERT INTO course_tags (course_id, tag_id) VALUES (:course_id, :tag_id)";
+                $tag_stmt = $conn->prepare($tag_query);
+                
+                foreach ($data['tags'] as $tag_id) {
+                    $tag_stmt->execute([
+                        'course_id' => $course_id,
+                        'tag_id' => $tag_id
+                    ]);
                 }
             }
 
-            // Commit transaction
             $conn->commit();
             return true;
 
         } catch(PDOException $e) {
+            $conn->rollBack();
             error_log("Error in createCourse: " . $e->getMessage());
-            if ($conn) {
-                $conn->rollBack();
-            }
             return false;
         }
     }
 
-    /**
-     * Update had prof
-     * @return bool True wla false
-     */
+
     public function update() {
-        $db = new Database();
-        $conn = $db->getConnection();
-        $stmt = $conn->prepare("
-            UPDATE users 
-            SET name = ?, email = ?, status = ?, updated_at = CURRENT_TIMESTAMP
-            WHERE id = ? AND role = 'teacher'
-        ");
-        return $stmt->execute([$this->name, $this->email, $this->status, $this->id]);
+
     }
 
-    /**
-     * Delete had prof
-     * @return bool True wla false
-     */
+
     public function delete() {
-        $db = new Database();
-        $conn = $db->getConnection();
-        $stmt = $conn->prepare("DELETE FROM users WHERE id = ? AND role = 'teacher'");
-        return $stmt->execute([$this->id]);
     }
 
-    /**
-     * Katjib ga3 les students li kaydiro cours m3a had prof
-     * @param int $courseId Id dyal cours
-     * @return array Lista dyal les students
-     */
+
     public function getCourseStudents($courseId) {
         try {
             $db = new Database();
             $conn = $db->getConnection();
+
+            $query = "SELECT u.* FROM users u 
+                    INNER JOIN course_enrollments ce ON u.id = ce.student_id 
+                    WHERE ce.course_id = :course_id AND u.role = 'student'";
+            $stmt = $conn->prepare($query);
+            $stmt->bindParam(':course_id', $courseId);
+            $stmt->execute();
             
-            $sql = "SELECT u.id, u.name, u.email,
-                   e.status, e.progress, e.enrolled_at, e.completed_at
-            FROM enrollments e
-            JOIN users u ON e.student_id = u.id
-            WHERE e.course_id = ? AND u.role = 'student'
-            ORDER BY e.enrolled_at DESC";
-            
-            $stmt = $conn->prepare($sql);
-            $stmt->execute([$courseId]);
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch(PDOException $e) {
+            error_log("Error in getCourseStudents: " . $e->getMessage());
             return [];
         }
     }
 
-    /**
-     * Add content jdid l cours (video/pdf)
-     * @param int $courseId Id dyal cours
-     * @param array $data Data dyal content
-     * @return bool True wla false
-     */
-    public function addCourseContent($courseId, $data) {
-        try {
-            $db = new Database();
-            $conn = $db->getConnection();
-            $stmt = $conn->prepare("
-                INSERT INTO course_content (course_id, title, type, content_url, duration, order_number)
-                VALUES (?, ?, ?, ?, ?, ?)
-            ");
-            
-            return $stmt->execute([
-                $courseId,
-                $data['title'],
-                $data['type'],
-                $data['content_url'],
-                $data['duration'] ?? 0,
-                $data['order_number'] ?? 0
-            ]);
-        } catch(PDOException $e) {
-            return false;
-        }
-    }
 
-    /**
-     * Update course
-     * @param int $courseId Id dyal cours
-     * @param array $data Data jdida
-     * @return bool True wla false
-     */
-    public function updateCourse($courseId, $data) {
-        try {
-            $db = new Database();
-            $conn = $db->getConnection();
-            $stmt = $conn->prepare("
-                UPDATE courses 
-                SET category_id = ?, 
-                    title = ?, 
-                    type = ?,
-                    description = ?, 
-                    status = ?,
-                    url = ?,
-                    document_path = ?
-                WHERE id = ? AND teacher_id = ?
-            ");
-            
-            return $stmt->execute([
-                $data['category_id'],
-                $data['title'],
-                $data['type'],
-                $data['description'],
-                $data['status'] ?? 'draft',
-                $data['type'] === 'video' ? $data['url'] : null,
-                $data['type'] === 'document' ? $data['document_path'] : null,
-                $courseId,
-                $this->id
-            ]);
-        } catch(PDOException $e) {
-            return false;
-        }
-    }
-
-    /**
-     * Delete course
-     * @param int $courseId Id dyal cours
-     * @return bool True wla false
-     */
-    public function deleteCourse($courseId) {
-        try {
-            $db = new Database();
-            $conn = $db->getConnection();
-            $stmt = $conn->prepare("
-                DELETE FROM courses 
-                WHERE id = ? AND teacher_id = ?
-            ");
-            
-            return $stmt->execute([$courseId, $this->id]);
-        } catch(PDOException $e) {
-            return false;
-        }
-    }
-
-    /**
-     * Katjib ga3 categories
-     */
     public function getCategories() {
         try {
             $db = new Database();
@@ -319,9 +166,7 @@ class Teacher extends User {
         }
     }
 
-    /**
-     * Katjib ga3 tags
-     */
+     // Katjib ga3 tags
     public function getTags() {
         try {
             $db = new Database();
@@ -338,36 +183,109 @@ class Teacher extends User {
         }
     }
 
-    /**
-     * Create new tag
-     */
-    public function createTag($name) {
+    public function getCourseTags($courseId) {
         try {
             $db = new Database();
             $conn = $db->getConnection();
 
-            // Check if tag already exists
-            $query = "SELECT id FROM tags WHERE name = :name";
+            $query = "SELECT ct.tag_id, t.name 
+                     FROM course_tags ct 
+                     JOIN tags t ON ct.tag_id = t.id 
+                     WHERE ct.course_id = ?";
             $stmt = $conn->prepare($query);
-            $stmt->bindParam(':name', $name);
-            $stmt->execute();
+            $stmt->execute([$courseId]);
             
-            if ($tag = $stmt->fetch(PDO::FETCH_ASSOC)) {
-                return $tag['id'];
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch(PDOException $e) {
+            error_log("Error in getCourseTags: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    public function updateCourse($courseId, $data) {
+        try {
+            $db = new Database();
+            $conn = $db->getConnection();
+
+            $conn->beginTransaction();
+
+            // Update course details
+            $query = "UPDATE courses 
+                     SET category_id = :category_id,
+                         title = :title,
+                         type = :type,
+                         description = :description,
+                         status = :status,
+                         url = :url,
+                         document_path = :document_path
+                     WHERE id = :id AND teacher_id = :teacher_id";
+            
+            $stmt = $conn->prepare($query);
+            $result = $stmt->execute([
+                'category_id' => $data['category_id'],
+                'title' => $data['title'],
+                'type' => $data['type'],
+                'description' => $data['description'],
+                'status' => $data['status'],
+                'url' => $data['url'],
+                'document_path' => $data['document_path'],
+                'id' => $courseId,
+                'teacher_id' => $this->id
+            ]);
+
+            if (!$result) {
+                throw new Exception("Failed to update course");
             }
 
-            // Create new tag
-            $query = "INSERT INTO tags (name) VALUES (:name)";
-            $stmt = $conn->prepare($query);
-            $stmt->bindParam(':name', $name);
-            
-            if ($stmt->execute()) {
-                return $conn->lastInsertId();
+            // Delete existing tags
+            $stmt = $conn->prepare("DELETE FROM course_tags WHERE course_id = ?");
+            $stmt->execute([$courseId]);
+
+            // Insert new tags
+            if (!empty($data['tags'])) {
+                $tag_query = "INSERT INTO course_tags (course_id, tag_id) VALUES (:course_id, :tag_id)";
+                $tag_stmt = $conn->prepare($tag_query);
+                
+                foreach ($data['tags'] as $tag_id) {
+                    $tag_stmt->execute([
+                        'course_id' => $courseId,
+                        'tag_id' => $tag_id
+                    ]);
+                }
             }
-            
+
+            $conn->commit();
+            return true;
+
+        } catch(Exception $e) {
+            $conn->rollBack();
+            error_log("Error in updateCourse: " . $e->getMessage());
             return false;
+        }
+    }
+
+    public function deleteCourse($courseId) {
+        try {
+            $db = new Database();
+            $conn = $db->getConnection();
+
+            // First verify the course belongs to this teacher
+            $query = "SELECT id FROM courses WHERE id = ? AND teacher_id = ?";
+            $stmt = $conn->prepare($query);
+            $stmt->execute([$courseId, $this->id]);
+            
+            if (!$stmt->fetch()) {
+                return false; // Course not found or doesn't belong to this teacher
+            }
+
+            // Delete the course (related records will be deleted via ON DELETE CASCADE)
+            $query = "DELETE FROM courses WHERE id = ?";
+            $stmt = $conn->prepare($query);
+            $result = $stmt->execute([$courseId]);
+            
+            return $result;
         } catch(PDOException $e) {
-            error_log("Error in createTag: " . $e->getMessage());
+            error_log("Error in deleteCourse: " . $e->getMessage());
             return false;
         }
     }

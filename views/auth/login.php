@@ -14,7 +14,15 @@ unset($_SESSION['errors'], $_SESSION['success']);
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="../../assets/css/login.css" rel="stylesheet">
 </head>
-<body class="min-h-screen flex items-center justify-center p-4">
+<body class="min-h-screen flex flex-col items-center justify-center p-4 ">
+<div class="flex justify-between items-center pb-6">
+        <a href="../../public/index.php" class="text-gray-600 hover:text-gray-800 flex items-center gap-2 group">
+                  <svg class="w-5 h-5 transform group-hover:-translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                </svg>
+              Back to Home
+        </a>
+    </div>
     <div class="card">
         <div class="card-content">
             <div class="text-center mb-6">
@@ -37,7 +45,7 @@ unset($_SESSION['errors'], $_SESSION['success']);
                 <?php endif; ?>
             </div>
 
-            <form class="space-y-4" action="/yooudemy/controllers/login_process/login_process.php" method="POST">
+            <form class="space-y-4" action="/Youdemy/controllers/login_process/login_process.php" method="POST">
                 <div>
                     <input type="email" id="email" name="email" required
                            class="w-full form-input <?php echo isset($errors['email']) ? 'border-red-500' : ''; ?>"
@@ -66,7 +74,7 @@ unset($_SESSION['errors'], $_SESSION['success']);
                 <a href="./register.php" class="link ml-1 text-blue-700 hover:text-blue-900 transition-colors duration-300">Create one</a>
             </p>
         </div>
-    </div>
+</div>
 
     <script src="../../assets/js/login.js"></script>
 </body>

@@ -34,3 +34,4 @@ class Database {
         return $this->conn->lastInsertId();
     }
 }
+

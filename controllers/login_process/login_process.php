@@ -8,7 +8,7 @@ require_once '../../models/Admin.php';
 $email = $_POST['email'] ?? '';
 $password = $_POST['password'] ?? '';
 
-// echo "Trying to login with: " . $email . "<br>";
+error_log("Trying to login with: " . $email);
 
 $errors = [];
 
@@ -24,11 +24,11 @@ if(empty($password)) {
 
 if(!empty($errors)) {
     $_SESSION['errors'] = $errors;
-    header('Location: /yooudemy/views/auth/login.php');
+    header('Location: /Youdemy/views/auth/login.php');
     exit;
 }
 
-$users = [new Admin(), new Teacher(), new Student(),]; 
+$users = [new Admin(), new Teacher(), new Student()]; 
 foreach($users as $user) {
     // echo "Trying role: " . get_class($user) . "<br>";
     if($user->login($email, $password)) {
@@ -36,7 +36,7 @@ foreach($users as $user) {
         // Check if is active
         if($user->getStatus() !== 'active') {
             $_SESSION['errors'] = ['login' => 'Your account is pending approval'];
-            header('Location: /yooudemy/views/auth/login.php');
+            header('Location: /Youdemy/views/auth/login.php');
             exit;
         }
 
@@ -48,18 +48,18 @@ foreach($users as $user) {
 
         // Redirect based on role
         if ($user->getRole() === 'admin') {
-            header('Location: /yooudemy/views/Dashboard/admin/dashboard.php');
+            header('Location: /Youdemy/views/Dashboard/admin/dashboard.php');
             exit;
         } else if ($user->getRole() === 'teacher') {
-            header('Location: /yooudemy/views/Dashboard/teacher/dashboard.php');
+            header('Location: /Youdemy/views/Dashboard/teacher/dashboard.php');
             exit;
         } else if ($user->getRole() === 'student') {
-            header('Location: /yooudemy/views/Dashboard/student/dashboard.php');
+            header('Location: /Youdemy/views/Dashboard/student/dashboard.php');
             exit;
         }
     }
 }
 
 $_SESSION['errors'] = ['login' => 'Invalid email or password'];
-header('Location: /yooudemy/views/auth/login.php');
+header('Location: /Youdemy/views/auth/login.php');
 exit;

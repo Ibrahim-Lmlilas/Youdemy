@@ -2,27 +2,42 @@
 session_start();
 require_once '../../models/Teacher.php';
 
-// Check wach user mconnecti w wach teacher
+// Check if user is logged in and is a teacher
 if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'teacher') {
-    header('Location: /yooudemy/views/auth/login.php');
+    http_response_code(403);
+    echo json_encode(['error' => 'Unauthorized']);
     exit;
 }
 
-// Check wach kayn course_id
-if (!isset($_GET['id'])) {
-    header('Location: /yooudemy/controllers/teacher/dashboard.php?error=Course ID is required');
+// Check if course ID is provided
+if (!isset($_POST['course_id'])) {
+    http_response_code(400);
+    echo json_encode(['error' => 'Course ID is required']);
     exit;
 }
 
-// Initialiser teacher
 $teacher = new Teacher();
-$teacher->id = $_SESSION['user_id'];
+$teacher->setId($_SESSION['user_id']);
 
-// Delete course
-if ($teacher->deleteCourse($_GET['id'])) {
-    header('Location: /yooudemy/controllers/teacher/dashboard.php?success=Course deleted successfully');
-    exit;
-} else {
-    header('Location: /yooudemy/controllers/teacher/dashboard.php?error=Failed to delete course');
-    exit;
+try {
+    $courseId = $_POST['course_id'];
+    
+    // Verify the course belongs to this teacher
+    $course = $teacher->getCourse($courseId);
+    if (!$course) {
+        http_response_code(404);
+        echo json_encode(['error' => 'Course not found']);
+        exit;
+    }
+    
+    // Delete the course
+    if ($teacher->deleteCourse($courseId)) {
+        echo json_encode(['success' => true, 'message' => 'Course deleted successfully']);
+    } else {
+        http_response_code(500);
+        echo json_encode(['error' => 'Failed to delete course']);
+    }
+} catch (Exception $e) {
+    http_response_code(500);
+    echo json_encode(['error' => 'Server error: ' . $e->getMessage()]);
 }

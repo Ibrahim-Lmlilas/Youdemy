@@ -13,7 +13,15 @@ unset($_SESSION['errors']);
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="../../assets/css/register.css" rel="stylesheet">
 </head> 
-<body class="min-h-screen flex items-center justify-center p-4">
+<body class="min-h-screen flex flex-col items-center justify-center p-4">
+<div class="flex justify-between items-center pb-2">
+        <a href="../../public/index.php" class="text-gray-600 hover:text-gray-800 flex items-center gap-2 group">
+                  <svg class="w-5 h-5 transform group-hover:-translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                </svg>
+              Back to Home
+        </a>
+    </div>
     <div class="card">
         <div class="card-content">
             
@@ -25,7 +33,7 @@ unset($_SESSION['errors']);
                 <p class="text-gray-600 mt-1 text-sm">Join our learning community</p>
             </div>
 
-            <form class="space-y-4" action="/yooudemy/controllers/register_process/register_process.php" method="POST">
+            <form class="space-y-4" action="/Youdemy/controllers/register_process/register_process.php" method="POST">
                 <div>
                     <input type="text" id="name" name="name" required
                            class="w-full form-input <?php echo isset($errors['name']) ? 'border-red-500' : ''; ?>"

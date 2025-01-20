@@ -5,7 +5,7 @@ require_once '../../../models/Course.php';
 
 // Check if user is logged in and is student
 if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'student') {
-    header('Location: /yooudemy/views/auth/login.php');
+    header('Location: /Youdemy/views/auth/login.php');
     exit;
 }
 
@@ -98,7 +98,7 @@ $availableCourses = $course->getAllPublishedCourses();
                                             <?php echo htmlspecialchars($course['teacher_name']); ?>
                                         </p>
                                     </div>
-                                    <form method="POST" action="/yooudemy/controllers/student/enroll.php" class="block">
+                                    <form method="POST" action="/Youdemy/controllers/student/enroll.php" class="block">
                                         <input type="hidden" name="course_id" value="<?php echo $course['id']; ?>">
                                         <?php if ($course['is_enrolled']): ?>
                                             <button disabled 

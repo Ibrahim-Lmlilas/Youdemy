@@ -2,63 +2,73 @@
 session_start();
 require_once '../../models/Teacher.php';
 
-// Check wach user mconnecti w wach teacher
+// Check if user is logged in and is a teacher
 if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'teacher') {
-    header('Location: /yooudemy/views/auth/login.php');
+    http_response_code(403);
+    echo json_encode(['error' => 'Unauthorized']);
     exit;
 }
 
-// Check wach kayn course_id
-if (!isset($_GET['id'])) {
-    header('Location: /yooudemy/controllers/teacher/dashboard.php?error=Course ID is required');
+// Check if course ID is provided
+if (!isset($_POST['course_id'])) {
+    http_response_code(400);
+    echo json_encode(['error' => 'Course ID is required']);
     exit;
 }
 
-// Initialiser teacher
 $teacher = new Teacher();
-$teacher->id = $_SESSION['user_id'];
+$teacher->setId($_SESSION['user_id']);
 
-// Jib course
-$course = $teacher->getCourse($_GET['id']);
-if (!$course) {
-    header('Location: /yooudemy/controllers/teacher/dashboard.php?error=Course not found');
-    exit;
-}
-
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Upload file ila kan type = document
-    $document_path = $course['document_path']; // Keep old path by default
-    if ($_POST['type'] === 'document' && isset($_FILES['document']) && $_FILES['document']['size'] > 0) {
-        $target_dir = "../../uploads/courses/documents/";
-        if (!file_exists($target_dir)) {
-            mkdir($target_dir, 0777, true);
+try {
+    $courseId = $_POST['course_id'];
+    
+    // Verify the course belongs to this teacher
+    $course = $teacher->getCourse($courseId);
+    if (!$course) {
+        http_response_code(404);
+        echo json_encode(['error' => 'Course not found']);
+        exit;
+    }
+    
+    // Handle file upload if document type
+    $document_path = $course['document_path']; // Keep existing path by default
+    if ($_POST['type'] === 'document' && isset($_FILES['document']) && $_FILES['document']['error'] === UPLOAD_ERR_OK) {
+        $upload_dir = '../../uploads/courses/';
+        if (!file_exists($upload_dir)) {
+            mkdir($upload_dir, 0777, true);
         }
         
-        $target_file = $target_dir . basename($_FILES["document"]["name"]);
-        if (move_uploaded_file($_FILES["document"]["tmp_name"], $target_file)) {
-            $document_path = '/uploads/courses/documents/' . basename($_FILES["document"]["name"]);
+        $file_extension = pathinfo($_FILES['document']['name'], PATHINFO_EXTENSION);
+        $file_name = uniqid() . '.' . $file_extension;
+        $document_path = $upload_dir . $file_name;
+        
+        if (!move_uploaded_file($_FILES['document']['tmp_name'], $document_path)) {
+            http_response_code(500);
+            echo json_encode(['error' => 'Failed to upload document']);
+            exit;
         }
     }
 
-    // Update course
-    $data = [
+    // Prepare course data
+    $courseData = [
         'category_id' => $_POST['category_id'],
         'title' => $_POST['title'],
         'type' => $_POST['type'],
         'description' => $_POST['description'],
         'status' => $_POST['status'],
         'url' => $_POST['type'] === 'video' ? $_POST['url'] : null,
-        'document_path' => $document_path
+        'document_path' => $_POST['type'] === 'document' ? $document_path : null,
+        'tags' => isset($_POST['tags']) ? $_POST['tags'] : []
     ];
 
-    if ($teacher->updateCourse($_GET['id'], $data)) {
-        header('Location: /yooudemy/controllers/teacher/dashboard.php?success=Course updated successfully');
-        exit;
+    // Update the course
+    if ($teacher->updateCourse($courseId, $courseData)) {
+        echo json_encode(['success' => true, 'message' => 'Course updated successfully']);
     } else {
-        header('Location: /yooudemy/controllers/teacher/edit-course.php?id=' . $_GET['id'] . '&error=Failed to update course');
-        exit;
+        http_response_code(500);
+        echo json_encode(['error' => 'Failed to update course']);
     }
+} catch (Exception $e) {
+    http_response_code(500);
+    echo json_encode(['error' => 'Server error: ' . $e->getMessage()]);
 }
-
-// Load view
-require_once '../../views/Dashboard/teacher/edit-course.php';

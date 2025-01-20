@@ -9,11 +9,7 @@ class Course {
         $this->db = new Database();
     }
 
-    /**
-     * Katjib ga3 les cours li published
-     * @param int|null $studentId ID dyal student
-     * @return array Lista dyal les cours
-     */
+
     public function getAllPublishedCourses($studentId = null) {
         try {
             $conn = $this->db->getConnection();
@@ -43,11 +39,7 @@ class Course {
         }
     }
 
-    /**
-     * Katjib course b ID dyalo
-     * @param int $id ID dyal course
-     * @return array|null Course data or null if not found
-     */
+
     public function getCourseById($id) {
         try {
             $conn = $this->db->getConnection();

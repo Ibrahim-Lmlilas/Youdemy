@@ -93,30 +93,34 @@ class Admin extends User {
         return $result['count'];
     }
 
-    public function update() {
-        // Implementation for updating admin user
-        return true;
+    public function update() {}
+
+    public function delete() {}
+
+    public function deleteCourse($courseId) {
+        try {
+            // First delete related records in course_tags
+            $stmt = $this->db->prepare("DELETE FROM course_tags WHERE course_id = ?");
+            $stmt->execute([$courseId]);
+            
+            // Then delete the course
+            $stmt = $this->db->prepare("DELETE FROM courses WHERE id = ?");
+            return $stmt->execute([$courseId]);
+        } catch (PDOException $e) {
+            error_log("Error deleting course: " . $e->getMessage());
+            return false;
+        }
     }
 
-    public function delete() {
-        // Implementation for deleting admin user
-        return true;
-    }
-
-    /**
-     * Search users by name/email and filter by role
-     */
     public function searchUsers($role = 'all', $search = '') {
         $sql = "SELECT id, name, email, role, status FROM users WHERE 1=1";
         $params = [];
 
-        // Add role filter
         if ($role !== 'all') {
             $sql .= " AND role = ?";
             $params[] = $role;
         }
 
-        // Add search filter
         if (!empty($search)) {
             $sql .= " AND (name LIKE ? OR email LIKE ?)";
             $params[] = "%$search%";
@@ -130,7 +134,6 @@ class Admin extends User {
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    // Tag Management
     public function addTag($name) {
         $stmt = $this->db->prepare("INSERT INTO tags (name) VALUES (?)");
         return $stmt->execute([$name]);
@@ -146,7 +149,6 @@ class Admin extends User {
         return $stmt->execute([$id]);
     }
 
-    // Category Management
     public function addCategory($name, $description = '') {
         $stmt = $this->db->prepare("INSERT INTO categories (name, description) VALUES (?, ?)");
         return $stmt->execute([$name, $description]);
