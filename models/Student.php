@@ -39,8 +39,8 @@ class Student extends User {
         }
     }
 
-
-    public function getEnrolledCourses() {
+//kiki
+    public function getCourses() {
         try {
             $db = new Database();
             $conn = $db->getConnection();

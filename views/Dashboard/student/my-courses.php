@@ -9,7 +9,7 @@ if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'student') {
 
 $student = new Student();
 $student->id = $_SESSION['user_id'];
-$enrolledCourses = $student->getEnrolledCourses();
+$enrolledCourses = $student->getCourses();
 ?>
 
 <!DOCTYPE html>

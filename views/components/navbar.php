@@ -4,8 +4,8 @@ $user_name = isset($_SESSION['user_name']) ? $_SESSION['user_name'] : '';
 ?>
 
 <!-- Top Navigation -->
-<nav class="bg-white shadow-lg">
-    <div class="max-w-full mx-auto px-4">
+<nav class="bg-white shadow-lg top-0 left-0 right-0 z-50 fixed ">
+    <div class="max-w-full mx-auto px-4 ">
         <div class="flex justify-between h-16">
             <div class="flex">
                 <div class="flex-shrink-0 flex items-center">

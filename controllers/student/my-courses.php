@@ -8,6 +8,6 @@ if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'student') {
 }
 
 $student = new Student($_SESSION['user_id']);
-$enrolledCourses = $student->getEnrolledCourses();
+$enrolledCourses = $student->getCourses();
 
 require_once '../../views/Dashboard/student/my-courses.php';

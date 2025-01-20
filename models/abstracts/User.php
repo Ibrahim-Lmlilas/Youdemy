@@ -2,7 +2,7 @@
 
 require_once __DIR__ . '/../traits/Authentication.php';
 
-abstract class User {
+abstract class User  {
     use Authentication;
 
     protected $id;
@@ -12,6 +12,8 @@ abstract class User {
     protected $status;
     protected $created_at;
     protected $updated_at;
+
+    public function getCourses(){}
 
     // Getters
     public function getId() 
@@ -24,7 +26,7 @@ abstract class User {
     { return $this->email; }
 
     public function getRole()
-     { return $this->role; }
+    { return $this->role; }
 
     public function getStatus() 
     { return $this->status; }

@@ -35,8 +35,9 @@ if ($userRole === 'student') {
 </button>
 
 <!-- Sidebar -->
+ 
 <div class="sidebar " >
-    <div class="nav-links">
+    <div class="nav-links ">
         <?php foreach ($navItems as $item): ?>
             <a href="<?php echo $item['path']; ?>" 
                class="nav-link <?php echo basename($item['path']) === $currentPage ? 'active' : ''; ?>">

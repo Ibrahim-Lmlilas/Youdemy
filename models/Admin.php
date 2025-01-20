@@ -28,8 +28,8 @@ class Admin extends User {
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
-
-    public function getAllCourses() {
+//kiki
+    public function getCourses() {
         $sql = "SELECT c.*, u.name as teacher_name, cat.name as category_name 
                 FROM courses c 
                 JOIN users u ON c.teacher_id = u.id 

@@ -9,7 +9,7 @@ if(!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'admin') {
 }
 
 $admin = new Admin();
-$courses = $admin->getAllCourses();
+$courses = $admin->getCourses();
 $userName = $_SESSION['user_name'] ?? 'Admin';
 ?>
 <!DOCTYPE html>
