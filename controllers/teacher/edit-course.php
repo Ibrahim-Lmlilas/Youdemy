@@ -2,14 +2,12 @@
 session_start();
 require_once '../../models/Teacher.php';
 
-// Check if user is logged in and is a teacher
 if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'teacher') {
     http_response_code(403);
     echo json_encode(['error' => 'Unauthorized']);
     exit;
 }
 
-// Check if course ID is provided
 if (!isset($_POST['course_id'])) {
     http_response_code(400);
     echo json_encode(['error' => 'Course ID is required']);
@@ -22,7 +20,6 @@ $teacher->setId($_SESSION['user_id']);
 try {
     $courseId = $_POST['course_id'];
     
-    // Verify the course belongs to this teacher
     $course = $teacher->getCourse($courseId);
     if (!$course) {
         http_response_code(404);
@@ -30,8 +27,7 @@ try {
         exit;
     }
     
-    // Handle file upload if document type
-    $document_path = $course['document_path']; // Keep existing path by default
+    $document_path = $course['document_path']; 
     if ($_POST['type'] === 'document' && isset($_FILES['document']) && $_FILES['document']['error'] === UPLOAD_ERR_OK) {
         $upload_dir = '../../uploads/courses/';
         if (!file_exists($upload_dir)) {
@@ -49,7 +45,6 @@ try {
         }
     }
 
-    // Prepare course data
     $courseData = [
         'category_id' => $_POST['category_id'],
         'title' => $_POST['title'],
@@ -61,7 +56,6 @@ try {
         'tags' => isset($_POST['tags']) ? $_POST['tags'] : []
     ];
 
-    // Update the course
     if ($teacher->updateCourse($courseId, $courseData)) {
         echo json_encode(['success' => true, 'message' => 'Course updated successfully']);
     } else {

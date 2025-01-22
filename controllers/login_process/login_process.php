@@ -8,7 +8,7 @@ require_once '../../models/Admin.php';
 $email = $_POST['email'] ?? '';
 $password = $_POST['password'] ?? '';
 
-error_log("Trying to login with: " . $email);
+// error_log("Trying to login with: " . $email);
 
 $errors = [];
 

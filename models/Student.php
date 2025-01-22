@@ -26,7 +26,7 @@ class Student extends User {
                 return false;
             }
 
-            // Enroll in course
+          
             $stmt = $conn->prepare("INSERT INTO enrollments (student_id, course_id) VALUES (?, ?)");
             $stmt->execute([$this->id, $courseId]);
             
@@ -39,7 +39,6 @@ class Student extends User {
         }
     }
 
-//kiki
     public function getCourses() {
         try {
             $db = new Database();
@@ -61,6 +60,5 @@ class Student extends User {
         }
     }
 
-    public function update() {}
-    public function delete() {}
+
 }

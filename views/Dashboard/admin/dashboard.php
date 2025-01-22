@@ -8,10 +8,8 @@ if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'admin') {
     exit;
 }
 
-// Initialize Admin object
 $admin = new Admin();
 
-// Get dashboard statistics
 $dashboard = $admin->getDashboard();
 $users_summary = $dashboard['users_summary'];
 $courses_summary = $dashboard['courses_summary'];
@@ -23,28 +21,21 @@ $courses_summary = $dashboard['courses_summary'];
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard - Youdemy</title>
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Chart.js for statistics -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="../../../assets/css/Dashboard.css">
 
 </head>
 <body class="bg-gray-100">
-    <!-- Include navbar -->
     <?php include '../../components/navbar.php'; ?>
 
     <div class="flex">
-        <!-- Include sidebar -->
         <?php include '../../components/sidebar.php'; ?>
 
-        <!-- Main content -->
         <div class="flex-1 p-8">
             <h1 class="text-2xl font-bold mb-6">Dashboard Overview</h1>
 
-            <!-- Statistics Cards -->
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-                <!-- Total Users Card -->
                 <div class="bg-white rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300 transform hover:-translate-y-1">
                     <div class="p-6">
                         <div class="flex items-center">
@@ -62,7 +53,6 @@ $courses_summary = $dashboard['courses_summary'];
                     </div>
                 </div>
 
-                <!-- Total Students Card -->
                 <div class="bg-white rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300 transform hover:-translate-y-1">
                     <div class="p-6">
                         <div class="flex items-center">
@@ -81,7 +71,6 @@ $courses_summary = $dashboard['courses_summary'];
                     </div>
                 </div>
 
-                <!-- Total Teachers Card -->
                 <div class="bg-white rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300 transform hover:-translate-y-1">
                     <div class="p-6">
                         <div class="flex items-center">
@@ -99,7 +88,6 @@ $courses_summary = $dashboard['courses_summary'];
                     </div>
                 </div>
 
-                <!-- Total Courses Card -->
                 <div class="bg-white rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300 transform hover:-translate-y-1">
                     <div class="p-6">
                         <div class="flex items-center">
@@ -117,7 +105,6 @@ $courses_summary = $dashboard['courses_summary'];
                     </div>
                 </div>
 
-                <!-- Pending Teachers Card -->
                 <div class="bg-white rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300 transform hover:-translate-y-1">
                     <div class="p-6">
                         <div class="flex items-center">
@@ -140,7 +127,6 @@ $courses_summary = $dashboard['courses_summary'];
                     </div>
                 </div>
 
-                <!-- Published Courses Card -->
                 <div class="bg-white rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300 transform hover:-translate-y-1">
                     <div class="p-6">
                         <div class="flex items-center">

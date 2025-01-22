@@ -2,13 +2,11 @@
 session_start();
 require_once '../../../models/Teacher.php';
 
-// Check if user is logged in and is a teacher
 if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'teacher') {
     header('Location: /Youdemy/views/auth/login.php');
     exit;
 }
 
-// Check if course ID is provided
 if (!isset($_GET['id'])) {
     header('Location: dashboard.php');
     exit;
@@ -17,18 +15,15 @@ if (!isset($_GET['id'])) {
 $teacher = new Teacher();
 $teacher->setId($_SESSION['user_id']);
 
-// Get course details
 $course = $teacher->getCourse($_GET['id']);
 if (!$course) {
     header('Location: dashboard.php');
     exit;
 }
 
-// Get categories and tags
 $categories = $teacher->getCategories();
 $tags = $teacher->getTags();
 
-// Get course tags
 $courseTags = $teacher->getCourseTags($course['id']);
 ?>
 

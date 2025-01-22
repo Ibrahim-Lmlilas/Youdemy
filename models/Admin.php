@@ -28,7 +28,7 @@ class Admin extends User {
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
-//kiki
+
     public function getCourses() {
         $sql = "SELECT c.*, u.name as teacher_name, cat.name as category_name 
                 FROM courses c 
@@ -93,17 +93,13 @@ class Admin extends User {
         return $result['count'];
     }
 
-    public function update() {}
 
-    public function delete() {}
 
     public function deleteCourse($courseId) {
         try {
-            // First delete related records in course_tags
             $stmt = $this->db->prepare("DELETE FROM course_tags WHERE course_id = ?");
             $stmt->execute([$courseId]);
             
-            // Then delete the course
             $stmt = $this->db->prepare("DELETE FROM courses WHERE id = ?");
             return $stmt->execute([$courseId]);
         } catch (PDOException $e) {

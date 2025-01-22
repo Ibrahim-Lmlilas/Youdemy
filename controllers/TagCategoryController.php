@@ -59,7 +59,6 @@ class TagCategoryController {
         
  
         
-        // For regular form submissions, redirect back
         header('Location: ' . $_SERVER['HTTP_REFERER']);
         exit;
     }

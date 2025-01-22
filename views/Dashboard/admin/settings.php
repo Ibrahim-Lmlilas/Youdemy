@@ -51,7 +51,7 @@ $userName = $_SESSION['user_name'] ?? 'Admin';
         <main class="w-full md:flex-1 p-4 md:p-6">
             <div class="max-w-7xl mx-auto">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <!-- Tags Management -->
+                    <!-- Tags  -->
                     <div class="bg-white rounded-lg shadow-sm">
                         <div class="p-4 md:p-6 border-b border-gray-200">
                             <div class="flex flex-col md:flex-row justify-between items-center gap-4">
@@ -97,7 +97,7 @@ $userName = $_SESSION['user_name'] ?? 'Admin';
                         </div>
                     </div>
 
-                    <!-- Categories Management -->
+                    <!-- Categories  -->
                     <div class="bg-white rounded-lg shadow-sm">
                         <div class="p-4 md:p-6 border-b border-gray-200">
                             <div class="flex flex-col md:flex-row justify-between items-center gap-4">

@@ -12,6 +12,9 @@ CREATE TABLE users (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
+
+
+
 CREATE TABLE categories (
     id INT PRIMARY KEY AUTO_INCREMENT,
     name VARCHAR(100) NOT NULL,
@@ -39,6 +42,12 @@ CREATE Table courses(
 );
 
 
+ALTER TABLE courses 
+ADD COLUMN url VARCHAR(255) AFTER description,
+ADD COLUMN document_path VARCHAR(255) AFTER url;
+
+
+
 CREATE Table course_tags(
     course_id int(11) NOT NULL,
     tag_id int(11) NOT NULL,
@@ -57,44 +66,10 @@ CREATE Table enrollments(
 
 -- Password: HAKARI
 INSERT INTO users (name, email, password, role, status) VALUES
-('Admin User', 'admin@youdemy.com', '$2y$10$mcqddzUGxr.hu1LxlP9DZelrmmWveclZZafbOAYAXDvwER7EElQYO', 'admin', 'active'),
-('Teacher One', 'teacher1@youdemy.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'teacher', 'active'),
-('Student One', 'student1@youdemy.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'student', 'active');
+('Admin User', 'admin@youdemy.com', '$2y$10$mcqddzUGxr.hu1LxlP9DZelrmmWveclZZafbOAYAXDvwER7EElQYO', 'admin', 'active');
 
-INSERT INTO categories (name, description) VALUES
-('Web Development', 'Learn web development from scratch'),
-('Mobile Development', 'Create mobile apps for iOS and Android'),
-('Data Science', 'Master data science and machine learning');
 
-INSERT INTO tags (name) VALUES
-('PHP'),
-('JavaScript'),
-('Python');
 
-INSERT INTO courses (teacher_id, category_id, title, type, description, status) VALUES
-(2, 1, 'PHP Fundamentals', 'video', 'Learn PHP basics and advanced concepts', 'published'),
-(2, 1, 'JavaScript Mastery', 'video', 'Master JavaScript programming', 'published'),
-(2, 2, 'Mobile App Development', 'document', 'Create your first mobile app', 'published'),
-(2, 3, 'Python for Data Science', 'video', 'Learn Python for data analysis', 'draft');
+SELECT * FROM users
 
-INSERT INTO course_tags (course_id, tag_id) VALUES
-(1, 1), 
-(2, 2);
 
-INSERT INTO enrollments (student_id, course_id) VALUES
-(2, 1), 
-(2, 2); 
-
-ALTER TABLE courses 
-ADD COLUMN url VARCHAR(255) AFTER description,
-ADD COLUMN document_path VARCHAR(255) AFTER url;
-
-UPDATE courses 
-SET url = CASE 
-    WHEN type = 'video' THEN 'https://www.youtube.com/watch?v=example'
-    ELSE ''
-END,
-document_path = CASE 
-    WHEN type = 'document' THEN '/uploads/courses/documents/example.pdf'
-    ELSE ''
-END;

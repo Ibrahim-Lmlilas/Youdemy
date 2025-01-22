@@ -69,7 +69,7 @@ $enrolledCourses = $student->getCourses();
                                     <?php endif; ?>
                                     <h3 class="font-semibold text-lg"><?php echo htmlspecialchars($course['title']); ?></h3>
                                 </div>
-                                <p class="text-sm mb-2">zz</p>
+                                <p class="text-sm mb-2">----------------------------------------------------------------</p>
                                 <div class="flex items-center gap-2 mb-4">
                                     <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
@@ -78,18 +78,11 @@ $enrolledCourses = $student->getCourses();
                                 </div>
                                 <div class="flex flex-wrap gap-2 mb-4">
                                     <span class="px-2 py-1 text-xs font-medium bg-orange-100 text-orange-600 rounded-lg">
-                                        <?php echo ucfirst($course['type']); ?>
+                                        <?php echo ($course['type']); ?>
                                     </span>
-                                    <?php if (!empty($course['tags'])): ?>
-                                        <?php foreach (explode(',', $course['tags']) as $tag): ?>
-                                            <span class="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-600 rounded-lg">
-                                                <?php echo htmlspecialchars(trim($tag)); ?>
-                                            </span>
-                                        <?php endforeach; ?>
-                                    <?php endif; ?>
                                 </div>
                                 <?php if ($course['type'] === 'video'): ?>
-                                    <?php if (!empty($course['url'])): ?>
+                                    <?php if (isset($course['url'])): ?>
                                         <a href="<?php echo htmlspecialchars($course['url']); ?>" 
                                            target="_blank"
                                            class="w-full flex items-center justify-center px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors">
@@ -107,7 +100,7 @@ $enrolledCourses = $student->getCourses();
                                         </button>
                                     <?php endif; ?>
                                 <?php else: ?>
-                                    <?php if (!empty($course['document_path'])): ?>
+                                    <?php if (isset($course['document_path'])): ?>
                                         <a href="<?php echo htmlspecialchars($course['document_path']); ?>"
                                            download
                                            class="w-full flex items-center justify-center px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors">

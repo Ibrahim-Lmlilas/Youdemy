@@ -44,9 +44,9 @@ if($role === 'student') {
 
 if($user->register($name, $email, $password, $role)) {
     if($role === 'teacher') {
-        $_SESSION['success'] = "Registration successful! Please wait for admin approval before logging in.";
+        $_SESSION['success'] = "Registration successful Please wait for admin approval before logging in.";
     } else {
-        $_SESSION['success'] = "Registration successful! You can now login.";
+        $_SESSION['success'] = "Registration successful You can now login.";
     }
     header('Location: /Youdemy/views/auth/login.php');
     exit;

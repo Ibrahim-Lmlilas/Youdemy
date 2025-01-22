@@ -44,7 +44,7 @@ unset($_SESSION['errors'], $_SESSION['success']);
                     </div>
                 <?php endif; ?>
             </div>
-
+<!-- --------------------------------------------------------------------------------------------------------------------------- -->
             <form class="space-y-4" action="/Youdemy/controllers/login_process/login_process.php" method="POST">
                 <div>
                     <input type="email" id="email" name="email" required

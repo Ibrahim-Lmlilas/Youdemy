@@ -120,36 +120,6 @@ class Teacher extends User {
         }
     }
 
-
-    public function update() {
-
-    }
-
-
-    public function delete() {
-    }
-
-
-    public function getCourseStudents($courseId) {
-        try {
-            $db = new Database();
-            $conn = $db->getConnection();
-
-            $query = "SELECT u.* FROM users u 
-                    INNER JOIN course_enrollments ce ON u.id = ce.student_id 
-                    WHERE ce.course_id = :course_id AND u.role = 'student'";
-            $stmt = $conn->prepare($query);
-            $stmt->bindParam(':course_id', $courseId);
-            $stmt->execute();
-            
-            return $stmt->fetchAll(PDO::FETCH_ASSOC);
-        } catch(PDOException $e) {
-            error_log("Error in getCourseStudents: " . $e->getMessage());
-            return [];
-        }
-    }
-
-
     public function getCategories() {
         try {
             $db = new Database();
@@ -237,11 +207,9 @@ class Teacher extends User {
                 throw new Exception("Failed to update course");
             }
 
-            // Delete existing tags
             $stmt = $conn->prepare("DELETE FROM course_tags WHERE course_id = ?");
             $stmt->execute([$courseId]);
 
-            // Insert new tags
             if (!empty($data['tags'])) {
                 $tag_query = "INSERT INTO course_tags (course_id, tag_id) VALUES (:course_id, :tag_id)";
                 $tag_stmt = $conn->prepare($tag_query);
@@ -269,16 +237,14 @@ class Teacher extends User {
             $db = new Database();
             $conn = $db->getConnection();
 
-            // First verify the course belongs to this teacher
             $query = "SELECT id FROM courses WHERE id = ? AND teacher_id = ?";
             $stmt = $conn->prepare($query);
             $stmt->execute([$courseId, $this->id]);
             
             if (!$stmt->fetch()) {
-                return false; // Course not found or doesn't belong to this teacher
+                return false; 
             }
 
-            // Delete the course (related records will be deleted via ON DELETE CASCADE)
             $query = "DELETE FROM courses WHERE id = ?";
             $stmt = $conn->prepare($query);
             $result = $stmt->execute([$courseId]);

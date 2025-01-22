@@ -2,24 +2,22 @@
 session_start();
 require_once '../../../models/Teacher.php';
 require_once '../../../config/Database.php';
+require_once '../../../models/Course.php';
 
-// Check if user is logged in and is a teacher
+
 if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'teacher') {
     header('Location: /Youdemy/views/auth/login.php');
     exit;
 }
 
-// Create database connection
 $db = new Database();
 $conn = $db->getConnection();
 
-// Get categories for dropdown
-$stmt = $conn->query("SELECT * FROM categories ORDER BY name");
-$categories = $stmt->fetchAll(PDO::FETCH_ASSOC);
+$course = new Course();
+$categories = $course->getAllCategories();
+$tags = $course->getAllTags();
 
-// Get all tags
-$stmt = $conn->query("SELECT * FROM tags ORDER BY name");
-$tags = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
 ?>
 
 <!DOCTYPE html>
@@ -73,14 +71,12 @@ $tags = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <h1 class="text-xl font-semibold mb-6">Add New Course</h1>
 
                 <form action="/Youdemy/controllers/teacher/add-course.php" method="POST" enctype="multipart/form-data" class="space-y-4">
-                    <!-- Course Title -->
                     <div>
                         <label for="title" class="block text-sm font-medium text-gray-700 mb-1">Course Title</label>
                         <input type="text" id="title" name="title" required
                             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500">
                     </div>
 
-                    <!-- Course Category -->
                     <div>
                         <label for="category" class="block text-sm font-medium text-gray-700 mb-1">Category</label>
                         <select id="category" name="category_id" required
@@ -94,7 +90,6 @@ $tags = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         </select>
                     </div>
 
-                    <!-- Course Tags -->
                     <div>
                         <label for="tags" class="block text-sm font-medium text-gray-700 mb-2">Tags</label>
                         <select id="tags" name="tags[]" multiple class="w-full">
@@ -106,7 +101,6 @@ $tags = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         </select>
                     </div>
 
-                    <!-- Course Type -->
                     <div>
                         <label for="type" class="block text-sm font-medium text-gray-700 mb-1">Course Type</label>
                         <select id="type" name="type" required
@@ -117,7 +111,6 @@ $tags = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         </select>
                     </div>
 
-                    <!-- Course URL (for video) -->
                     <div id="urlField" class="hidden">
                         <label for="url" class="block text-sm font-medium text-gray-700 mb-1">Video URL</label>
                         <input type="url" id="url" name="url"
@@ -125,21 +118,18 @@ $tags = $stmt->fetchAll(PDO::FETCH_ASSOC);
                             placeholder="Enter YouTube or video URL">
                     </div>
 
-                    <!-- Course Document (for document) -->
                     <div id="documentField" class="hidden">
                         <label for="document" class="block text-sm font-medium text-gray-700 mb-1">Course Document</label>
                         <input type="file" id="document" name="document"
                             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500">
                     </div>
 
-                    <!-- Course Description -->
                     <div>
                         <label for="description" class="block text-sm font-medium text-gray-700 mb-1">Description</label>
                         <textarea id="description" name="description" rows="4" required
                             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"></textarea>
                     </div>
 
-                    <!-- Submit Buttons -->
                     <div class="flex justify-end space-x-3 pt-4">
                         <a href="dashboard.php" 
                             class="px-4 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50">

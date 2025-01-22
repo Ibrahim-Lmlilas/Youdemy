@@ -13,7 +13,7 @@ function confirmSuspend(userId) {
             // Create and submit form
             const form = document.createElement('form');
             form.method = 'POST';
-            form.action = '/Yooudemy/controllers/admin/suspend_user.php';
+            form.action = '/Youdemy/controllers/admin/suspend_user.php';
             
             const input = document.createElement('input');
             input.type = 'hidden';
@@ -41,7 +41,7 @@ function confirmActivate(userId) {
         if (result.isConfirmed) {
             const form = document.createElement('form');
             form.method = 'POST';
-            form.action = '/Yooudemy/controllers/admin/activate_user.php';
+            form.action = '/Youdemy/controllers/admin/activate_user.php';
             
             const input = document.createElement('input');
             input.type = 'hidden';
@@ -54,4 +54,3 @@ function confirmActivate(userId) {
         }
     });
 }
-

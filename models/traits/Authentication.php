@@ -28,10 +28,7 @@ trait Authentication {
         // kychof role
         $status = ($role === 'teacher') ? 'pending' : 'active';
 
-        $stmt = $this->db->prepare("
-            INSERT INTO users (name, email, password, role, status) 
-            VALUES (?, ?, ?, ?, ?)
-        ");
+        $stmt = $this->db->prepare("INSERT INTO users (name, email, password, role, status) VALUES (?, ?, ?, ?, ?)");
 
         return $stmt->execute([$name, $email, $hashedPassword, $role, $status]);
     }

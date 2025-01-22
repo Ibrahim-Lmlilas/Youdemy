@@ -14,20 +14,18 @@ class Course {
         try {
             $conn = $this->db->getConnection();
             
-            $sql = "SELECT c.*, cat.name as category_name, u.name as teacher_name,
-                          GROUP_CONCAT(DISTINCT t.name) as tags,
-                          EXISTS (
-                              SELECT 1 FROM enrollments e 
-                              WHERE e.course_id = c.id 
-                              AND e.student_id = ?
-                          ) as is_enrolled
-                   FROM courses c
-                   JOIN categories cat ON c.category_id = cat.id
-                   JOIN users u ON c.teacher_id = u.id
-                   LEFT JOIN course_tags ct ON c.id = ct.course_id
-                   LEFT JOIN tags t ON ct.tag_id = t.id
-                   WHERE c.status = 'published'
-                   GROUP BY c.id, cat.name, u.name";
+            $sql = "SELECT courses.*, categories.name AS category_name, users.name AS teacher_name,
+                GROUP_CONCAT(DISTINCT tags.name) AS tags,
+                EXISTS (SELECT 1 FROM enrollments  WHERE enrollments.course_id = courses.id 
+                    AND enrollments.student_id = ?
+                ) AS is_enrolled
+                FROM courses
+                JOIN categories ON courses.category_id = categories.id
+                JOIN users ON courses.teacher_id = users.id
+                LEFT JOIN course_tags ON courses.id = course_tags.course_id
+                LEFT JOIN tags ON course_tags.tag_id = tags.id
+                WHERE courses.status = 'published'
+                GROUP BY courses.id, categories.name, users.name";
             
             $stmt = $conn->prepare($sql);
             $stmt->execute([$studentId]);
@@ -69,7 +67,7 @@ class Course {
             $stmt = $conn->query("SELECT * FROM categories ORDER BY name");
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch(PDOException $e) {
-            error_log("Error in getAllCategories: " . $e->getMessage());
+            error_log("Error  " . $e->getMessage());
             return [];
         }
     }
@@ -80,7 +78,7 @@ class Course {
             $stmt = $conn->query("SELECT * FROM tags ORDER BY name");
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch(PDOException $e) {
-            error_log("Error in getAllTags: " . $e->getMessage());
+            error_log("Error : " . $e->getMessage());
             return [];
         }
     }

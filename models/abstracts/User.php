@@ -13,7 +13,7 @@ abstract class User  {
     protected $created_at;
     protected $updated_at;
 
-    public function getCourses(){}
+    abstract public function getCourses();
 
     // Getters
     public function getId() 
@@ -42,6 +42,5 @@ abstract class User  {
     public function setEmail($email) { $this->email = $email; }
     public function setStatus($status) { $this->status = $status; }
 
-    abstract public function update();
-    abstract public function delete();
+
 }

@@ -4,6 +4,7 @@ require_once '../models/Course.php';
 
 $course = new Course();
 $courses = $course->getAllPublishedCourses();
+// print_r($courses)
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -69,7 +70,6 @@ $courses = $course->getAllPublishedCourses();
     </style>
 </head>
 <body class="bg-gradient-to-br from-gray-50 to-gray-100">
-    <!-- Navigation -->
     <nav class="glass-effect shadow-lg sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4">
             <div class="flex justify-between h-16">
@@ -92,9 +92,7 @@ $courses = $course->getAllPublishedCourses();
         </div>
     </nav>
 
-    <!-- Hero Section with Floating Circle -->
     <div class="relative overflow-hidden">
-        <!-- Rotating Circle -->
         <div class="absolute top-0 right-0 -mr-40 -mt-40">
             <div class="w-96 h-96 border-4 border-purple-500/30 rounded-full rotating-circle"></div>
             <div class="absolute top-1/2 left-1/2 w-80 h-80 border-4 border-blue-500/20 rounded-full rotating-circle" style="animation-direction: reverse;"></div>
@@ -171,7 +169,6 @@ $courses = $course->getAllPublishedCourses();
         </div>
     </section>
 
-    <!-- Courses Section -->
     <section class="py-20 bg-gray-50">
         <div class="max-w-7xl mx-auto px-4">
             <div class="text-center mb-16">
@@ -180,13 +177,12 @@ $courses = $course->getAllPublishedCourses();
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                <?php foreach ($courses as $index => $course): ?>
+                <?php foreach ($courses as $course): ?>
                     <div class="bg-white rounded-xl shadow-lg overflow-hidden card-hover">
-                        <!-- Course Header -->
                         <div class="gradient-bg text-white p-4">
                             <div class="flex items-center justify-between">
-                                <span class="px-3 py-1 bg-white/20 rounded-full text-sm">
-                                    <?php echo ucfirst(htmlspecialchars($course['type'])); ?>
+                                <span class="px-3 py-1 bg-white/20 rounded-full text-sm capitalize">
+                                    <?php echo $course['type']; ?>
                                 </span>
                                 <span class="px-3 py-1 bg-white/20 rounded-full text-sm truncate max-w-[150px]">
                                     <?php echo htmlspecialchars($course['category_name']); ?>
@@ -194,7 +190,6 @@ $courses = $course->getAllPublishedCourses();
                             </div>
                         </div>
 
-                        <!-- Course Content -->
                         <div class="p-6">
                             <div class="flex items-center gap-4 mb-4">
                                 <?php if ($course['type'] === 'video'): ?>
@@ -242,7 +237,6 @@ $courses = $course->getAllPublishedCourses();
         </div>
     </section>
 
-    <!-- Footer -->
     <footer class="gradient-bg text-white py-16">
         <div class="max-w-7xl mx-auto px-4">
             <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
@@ -273,7 +267,6 @@ $courses = $course->getAllPublishedCourses();
                     </div>
                 </div>
 
-                <!-- Quick Links -->
                 <div>
                     <h4 class="text-lg font-semibold mb-4">Quick Links</h4>
                     <ul class="space-y-2">
@@ -284,7 +277,6 @@ $courses = $course->getAllPublishedCourses();
                     </ul>
                 </div>
 
-                <!-- Contact Info -->
                 <div>
                     <h4 class="text-lg font-semibold mb-4">Contact Us</h4>
                     <ul class="space-y-2">
@@ -304,7 +296,6 @@ $courses = $course->getAllPublishedCourses();
                 </div>
             </div>
 
-            <!-- Copyright -->
             <div class="pt-8 border-t border-gray-700 text-center">
                 <p class="text-gray-400"> 2024 Youdemy. All rights reserved.</p>
                 <div class="mt-2 text-sm text-gray-400">
@@ -317,7 +308,6 @@ $courses = $course->getAllPublishedCourses();
     </footer>
 
     <script>
-        // Animation pour les éléments au scroll
         function animateOnScroll() {
             const elements = document.querySelectorAll('.card-hover');
             elements.forEach((element, index) => {

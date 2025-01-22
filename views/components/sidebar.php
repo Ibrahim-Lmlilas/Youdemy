@@ -27,7 +27,6 @@ if ($userRole === 'student') {
 
 <link rel="stylesheet" href="/Youdemy/assets/css/sidebar.css">
 
-<!-- Burger Menu Button -->
 <button class="menu-toggle" onclick="toggleSidebar()">
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
@@ -35,7 +34,6 @@ if ($userRole === 'student') {
 </button>
 
 <!-- Sidebar -->
- 
 <div class="sidebar " >
     <div class="nav-links ">
         <?php foreach ($navItems as $item): ?>
@@ -50,7 +48,6 @@ if ($userRole === 'student') {
     </div>
 </div>
 
-<!-- Overlay for mobile -->
 <div class="sidebar-overlay" onclick="toggleSidebar()"></div>
 
 <script>
@@ -64,7 +61,6 @@ function toggleSidebar() {
     menuToggle.classList.toggle('open');
 }
 
-// Close sidebar when clicking outside
 document.addEventListener('click', function(event) {
     const sidebar = document.querySelector('.sidebar');
     const menuToggle = document.querySelector('.menu-toggle');
@@ -76,7 +72,6 @@ document.addEventListener('click', function(event) {
     }
 });
 
-// Close sidebar when window is resized to desktop size
 window.addEventListener('resize', function() {
     if (window.innerWidth > 768) {
         document.querySelector('.sidebar').classList.remove('open');

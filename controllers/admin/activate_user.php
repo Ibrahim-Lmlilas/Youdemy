@@ -11,7 +11,7 @@ require_once __DIR__ . '/../../models/Admin.php';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!isset($_POST['user_id']) || !is_numeric($_POST['user_id'])) {
         $_SESSION['error_message'] = "Invalid user ID";
-        header('Location: /yooudemy/views/Dashboard/admin/users.php');
+        header('Location: /Youdemy/views/Dashboard/admin/users.php');
         exit();
     }
 
@@ -29,7 +29,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['error_message'] = $e->getMessage();
     }
     
-    header('Location: /yooudemy/views/Dashboard/admin/users.php');
+    header('Location: /Youdemy/views/Dashboard/admin/users.php');
     exit();
 }
 ?>
